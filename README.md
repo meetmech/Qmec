@@ -1,6 +1,6 @@
 # QMEC
 
-QMEC is a personal C++20 engine and editor prototype built to explore engine-level programming, rendering, ECS architecture, and custom physics.
+QMEC is a personal C++20 engine and editor prototype I'm building to deepen my understanding of engine-level programming, rendering, and custom physics—and to serve as the foundation for a small car game with engaging, convincing vehicle physics.
 
 ## What is here
 
