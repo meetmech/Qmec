@@ -1,0 +1,530 @@
+{
+    "entities": [
+        {
+            "components": {
+                "collider": {
+                    "isTrigger": false,
+                    "shape": {
+                        "centre": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "halfHeight": 1.0,
+                        "radius": 1.0,
+                        "type": "cylinder"
+                    }
+                },
+                "material": {
+                    "albedoColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "albedoTexturePath": "",
+                    "metallic": 0.0,
+                    "normalStrength": 1.0,
+                    "normalTexturePath": "",
+                    "roughness": 0.5,
+                    "specularLevel": 0.5
+                },
+                "meshRenderer": {
+                    "materialIndex": 0,
+                    "meshIndex": 2,
+                    "visible": true
+                },
+                "name": "Cylinder",
+                "transform": {
+                    "position": [
+                        0.4040403366088867,
+                        -0.4482758641242981,
+                        0.5671641230583191
+                    ],
+                    "rotation": [
+                        0.7071068286895752,
+                        0.0,
+                        0.0,
+                        0.7071067094802856
+                    ],
+                    "scale": [
+                        0.1262626349925995,
+                        0.0746268779039383,
+                        0.21551728248596191
+                    ]
+                }
+            },
+            "id": 0,
+            "parent": 5
+        },
+        {
+            "components": {
+                "collider": {
+                    "isTrigger": false,
+                    "shape": {
+                        "centre": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "halfLengthZ": 0.5,
+                        "halfWidthX": 0.5,
+                        "type": "plane"
+                    }
+                },
+                "material": {
+                    "albedoColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "albedoTexturePath": "",
+                    "metallic": 0.0,
+                    "normalStrength": 1.0,
+                    "normalTexturePath": "",
+                    "roughness": 0.5,
+                    "specularLevel": 0.5
+                },
+                "meshRenderer": {
+                    "materialIndex": 0,
+                    "meshIndex": 3,
+                    "visible": true
+                },
+                "name": "Ground Plane",
+                "rigidBody": {
+                    "angularVelocity": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "dynamicFriction": 1.100000023841858,
+                    "elasticity": 0.0,
+                    "isKinematic": true,
+                    "mass": 1.0,
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rollingResistance": 1.0,
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "staticFriction": 1.100000023841858,
+                    "velocity": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "transform": {
+                    "position": [
+                        8.0,
+                        -3.0,
+                        4.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        30.0,
+                        30.0,
+                        30.0
+                    ]
+                }
+            },
+            "id": 1,
+            "parent": null
+        },
+        {
+            "components": {
+                "camera": {
+                    "farPlane": 100.0,
+                    "nearPlane": 0.10000000149011612,
+                    "primary": true,
+                    "verticalFieldOfViewRadians": 1.0471975803375244
+                },
+                "name": "Game Camera",
+                "transform": {
+                    "position": [
+                        14.779999732971191,
+                        3.0199999809265137,
+                        0.30000001192092896
+                    ],
+                    "rotation": [
+                        0.054304949939250946,
+                        -0.7195353507995605,
+                        0.05662868171930313,
+                        0.6900095343589783
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                }
+            },
+            "id": 2,
+            "parent": null
+        },
+        {
+            "components": {
+                "directionalLight": {
+                    "color": [
+                        1.0,
+                        0.949999988079071,
+                        0.8500000238418579
+                    ],
+                    "enabled": true,
+                    "intensity": 3.5799999237060547
+                },
+                "name": "Directional Light",
+                "transform": {
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.31126031279563904,
+                        -0.21142689883708954,
+                        0.07123982161283493,
+                        0.9237643480300903
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                }
+            },
+            "id": 3,
+            "parent": null
+        },
+        {
+            "components": {
+                "collider": {
+                    "isTrigger": false,
+                    "shape": {
+                        "centre": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "halfExtents": [
+                            0.5,
+                            0.5,
+                            0.5
+                        ],
+                        "type": "box"
+                    }
+                },
+                "material": {
+                    "albedoColor": [
+                        0.019999999552965164,
+                        0.7200000286102295,
+                        1.0
+                    ],
+                    "albedoTexturePath": "Assets/Textures/steel.png",
+                    "metallic": 0.23999999463558197,
+                    "normalStrength": 1.0,
+                    "normalTexturePath": "",
+                    "roughness": 0.3700000047683716,
+                    "specularLevel": 0.5
+                },
+                "meshRenderer": {
+                    "materialIndex": 0,
+                    "meshIndex": 0,
+                    "visible": true
+                },
+                "name": "Cube",
+                "transform": {
+                    "position": [
+                        -0.5757577419281006,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        0.505050539970398,
+                        0.6896552443504333,
+                        0.6119402647018433
+                    ]
+                }
+            },
+            "id": 4,
+            "parent": 5
+        },
+        {
+            "components": {
+                "collider": {
+                    "isTrigger": false,
+                    "shape": {
+                        "centre": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "halfExtents": [
+                            0.5,
+                            0.5,
+                            0.5
+                        ],
+                        "type": "box"
+                    }
+                },
+                "material": {
+                    "albedoColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "albedoTexturePath": "Assets/Textures/steel.png",
+                    "metallic": 0.0,
+                    "normalStrength": 1.0,
+                    "normalTexturePath": "",
+                    "roughness": 0.5,
+                    "specularLevel": 0.5
+                },
+                "meshRenderer": {
+                    "materialIndex": 0,
+                    "meshIndex": 0,
+                    "visible": true
+                },
+                "name": "Cube",
+                "rigidBody": {
+                    "angularVelocity": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "dynamicFriction": 0.30000001192092896,
+                    "elasticity": 0.0,
+                    "isKinematic": false,
+                    "mass": 300.0,
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rollingResistance": 0.02500000037252903,
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "staticFriction": 0.5,
+                    "velocity": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "scripts": [
+                    "vehicle_controller"
+                ],
+                "transform": {
+                    "position": [
+                        6.300000190734863,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        1.9800000190734863,
+                        1.159999966621399,
+                        1.340000033378601
+                    ]
+                }
+            },
+            "id": 5,
+            "parent": null
+        },
+        {
+            "components": {
+                "collider": {
+                    "isTrigger": false,
+                    "shape": {
+                        "centre": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "halfHeight": 1.0,
+                        "radius": 1.0,
+                        "type": "cylinder"
+                    }
+                },
+                "material": {
+                    "albedoColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "albedoTexturePath": "",
+                    "metallic": 0.0,
+                    "normalStrength": 1.0,
+                    "normalTexturePath": "",
+                    "roughness": 0.5,
+                    "specularLevel": 0.5
+                },
+                "meshRenderer": {
+                    "materialIndex": 0,
+                    "meshIndex": 2,
+                    "visible": true
+                },
+                "name": "Cylinder",
+                "transform": {
+                    "position": [
+                        -0.4747474193572998,
+                        -0.4482758641242981,
+                        -0.5970149040222168
+                    ],
+                    "rotation": [
+                        0.7071068286895752,
+                        0.0,
+                        0.0,
+                        0.7071067094802856
+                    ],
+                    "scale": [
+                        0.1262626349925995,
+                        0.0746268779039383,
+                        0.21551728248596191
+                    ]
+                }
+            },
+            "id": 6,
+            "parent": 5
+        },
+        {
+            "components": {
+                "collider": {
+                    "isTrigger": false,
+                    "shape": {
+                        "centre": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "halfHeight": 1.0,
+                        "radius": 1.0,
+                        "type": "cylinder"
+                    }
+                },
+                "material": {
+                    "albedoColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "albedoTexturePath": "",
+                    "metallic": 0.0,
+                    "normalStrength": 1.0,
+                    "normalTexturePath": "",
+                    "roughness": 0.5,
+                    "specularLevel": 0.5
+                },
+                "meshRenderer": {
+                    "materialIndex": 0,
+                    "meshIndex": 2,
+                    "visible": true
+                },
+                "name": "Cylinder",
+                "transform": {
+                    "position": [
+                        -0.4747474193572998,
+                        -0.4482758641242981,
+                        0.5671641230583191
+                    ],
+                    "rotation": [
+                        0.7071068286895752,
+                        0.0,
+                        0.0,
+                        0.7071067094802856
+                    ],
+                    "scale": [
+                        0.1262626349925995,
+                        0.0746268779039383,
+                        0.21551728248596191
+                    ]
+                }
+            },
+            "id": 7,
+            "parent": 5
+        },
+        {
+            "components": {
+                "collider": {
+                    "isTrigger": false,
+                    "shape": {
+                        "centre": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "halfHeight": 1.0,
+                        "radius": 1.0,
+                        "type": "cylinder"
+                    }
+                },
+                "material": {
+                    "albedoColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "albedoTexturePath": "",
+                    "metallic": 0.0,
+                    "normalStrength": 1.0,
+                    "normalTexturePath": "",
+                    "roughness": 0.5,
+                    "specularLevel": 0.5
+                },
+                "meshRenderer": {
+                    "materialIndex": 0,
+                    "meshIndex": 2,
+                    "visible": true
+                },
+                "name": "Cylinder",
+                "transform": {
+                    "position": [
+                        0.4040403366088867,
+                        -0.4482758641242981,
+                        -0.5970149040222168
+                    ],
+                    "rotation": [
+                        0.7071068286895752,
+                        0.0,
+                        0.0,
+                        0.7071067094802856
+                    ],
+                    "scale": [
+                        0.1262626349925995,
+                        0.0746268779039383,
+                        0.21551728248596191
+                    ]
+                }
+            },
+            "id": 8,
+            "parent": 5
+        }
+    ],
+    "format": "QMECScene",
+    "version": 1
+}

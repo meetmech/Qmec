@@ -1,0 +1,14 @@
+#include <QApplication>
+#include <QCoreApplication>
+#include "Editor.h"
+
+int main(int argc, char* argv[])
+{
+    QApplication app(argc, argv);
+    QCoreApplication::setOrganizationName("QMEC");
+    QCoreApplication::setApplicationName("QMECEditor");
+    Editor editor;
+    editor.show();
+
+    return app.exec();
+}

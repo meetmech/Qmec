@@ -1,0 +1,23 @@
+# Visual Studio state and generated CMake projects
+.vs/
+Build/
+out/
+
+# Local backups and developer-specific configuration
+Backups/
+CMakeUserPresets.json
+*.user
+*.suo
+*.VC.db
+*.VC.VC.opendb
+
+# Build/runtime artifacts
+*.exe
+*.dll
+*.pdb
+*.ilk
+*.obj
+*.lib
+*.log
+*.etl
+*.qm
