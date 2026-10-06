@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <memory>
 
-namespace qmec
+namespace qmec::assets
 {
     bool LoadImageRgba8(const char* filePath, ImageData& output)
     {

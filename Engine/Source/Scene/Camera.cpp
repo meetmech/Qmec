@@ -4,7 +4,7 @@
 #include <cmath>
 #include <numbers>
 
-namespace qmec
+namespace qmec::scene
 {
     Camera::Camera() noexcept
     {

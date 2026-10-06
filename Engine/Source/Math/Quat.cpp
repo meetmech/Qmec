@@ -5,7 +5,7 @@
 #include <cassert>
 #include <cmath>
 
-namespace qmec
+namespace qmec::math
 {
     float Quat::LengthSquared() const noexcept
     {

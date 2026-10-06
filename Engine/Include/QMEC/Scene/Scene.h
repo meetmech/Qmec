@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-namespace qmec
+namespace qmec::scene
 {
     struct SceneEntityEntry
     {
@@ -45,4 +45,10 @@ namespace qmec
         PhysicsWorld physcisWorld_;
         std::uint64_t hierarchyRevision_{};
     };
+}
+
+namespace qmec
+{
+    using scene::SceneEntityEntry;
+    using scene::Scene;
 }

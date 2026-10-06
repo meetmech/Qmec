@@ -3,7 +3,7 @@
 #include "QMEC/Scripting/Script.h"
 #include "Game/WheelController.h"
 
-namespace qmec
+namespace qmec::game
 {
     class VehicleController final : public Script
     {
@@ -22,4 +22,9 @@ namespace qmec
         WheelController rearLeftState{};
         WheelController rearRightState{};
     };
+}
+
+namespace qmec
+{
+    using game::VehicleController;
 }

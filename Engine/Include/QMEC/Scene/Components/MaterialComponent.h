@@ -4,7 +4,7 @@
 
 #include <string>
 
-namespace qmec
+namespace qmec::scene::components
 {
     struct MaterialComponent
     {
@@ -17,4 +17,9 @@ namespace qmec
         float roughness{0.5f};
         float specularLevel{0.5f};
     };
+}
+
+namespace qmec
+{
+    using scene::components::MaterialComponent;
 }

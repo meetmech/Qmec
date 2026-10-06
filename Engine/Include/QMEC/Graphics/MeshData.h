@@ -5,7 +5,7 @@
 #include <vector>
 #include "QMEC/Math/Vec3.h"
 
-namespace qmec
+namespace qmec::graphics
 {
 
     struct Vertex
@@ -36,4 +36,10 @@ namespace qmec
         std::vector<std::uint32_t> indices;
 
     };
+}
+
+namespace qmec
+{
+    using graphics::Vertex;
+    using graphics::MeshData;
 }

@@ -4,7 +4,7 @@
 #include <iostream>
 #include <vector>
 
-namespace qmec
+namespace qmec::physics
 {
     void ContactSolver::Solve(ContactManifold manifold)
     {

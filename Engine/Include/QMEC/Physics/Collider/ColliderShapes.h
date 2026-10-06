@@ -2,7 +2,7 @@
 
 #include "QMEC/Math/Vec3.h"
 
-namespace qmec
+namespace qmec::physics
 {
   
     struct BoxShape
@@ -31,4 +31,12 @@ namespace qmec
         float radius{};
         float halfHeight{};
     };
+}
+
+namespace qmec
+{
+    using physics::BoxShape;
+    using physics::PlaneShape;
+    using physics::SphereShape;
+    using physics::CylinderShape;
 }

@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace qmec
+namespace qmec::ecs
 {
     class Registry
     {
@@ -63,3 +63,8 @@ namespace qmec
 }
 
 #include "QMEC/ECS/Registry.inl"
+
+namespace qmec
+{
+    using ecs::Registry;
+}

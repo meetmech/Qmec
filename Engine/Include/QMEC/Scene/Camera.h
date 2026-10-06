@@ -3,7 +3,7 @@
 #include "QMEC/Math/Vec3.h"
 #include "QMEC/Math/Quat.h"
 
-namespace qmec
+namespace qmec::scene
 {
     class Camera final
     {
@@ -46,4 +46,9 @@ namespace qmec
         Mat4 view_{ Mat4::Identity() };
         Mat4 projection_{ Mat4::Identity() };
     };
+}
+
+namespace qmec
+{
+    using scene::Camera;
 }

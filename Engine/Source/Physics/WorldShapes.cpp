@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace qmec
+namespace qmec::physics
 {
     WorldBox ToWorldShape(const BoxShape& shape,const TransformComponent& transform) noexcept
     {

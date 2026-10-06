@@ -10,7 +10,7 @@
 #include "QMEC/Graphics/GPUBuffer.h"
 #include "QMEC/Graphics/MeshData.h"
 
-namespace qmec
+namespace qmec::graphics
 {
     class D3D11MeshManager
     {
@@ -26,4 +26,9 @@ namespace qmec
         Microsoft::WRL::ComPtr<ID3D11Device> device_;
         std::vector<GPUBuffer> meshes_;
     };
+}
+
+namespace qmec
+{
+    using graphics::D3D11MeshManager;
 }

@@ -11,7 +11,7 @@
 #include <limits>
 #include <variant>
 
-namespace qmec
+namespace qmec::game
 {
     bool WheelController::RefreshColliderState(const Scene& scene, Entity wheelEntity) noexcept
     {

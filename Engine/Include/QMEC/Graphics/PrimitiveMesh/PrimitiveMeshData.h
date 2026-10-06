@@ -4,7 +4,7 @@
 #include <cmath>
 #include "QMEC/Math/Vec3.h"
 
-namespace qmec
+namespace qmec::graphics
 {
 	inline void CalculateTangents(MeshData& mesh)
 	{
@@ -552,4 +552,13 @@ namespace qmec
     };
 
 
+}
+
+namespace qmec
+{
+    using graphics::CalculateTangents;
+    using graphics::CubeMesh;
+    using graphics::PlaneMesh;
+    using graphics::SphereMesh;
+    using graphics::CylinderMesh;
 }

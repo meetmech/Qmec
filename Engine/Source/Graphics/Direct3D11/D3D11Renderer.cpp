@@ -29,15 +29,15 @@ namespace
 {
     struct DebugVertex
     {
-        qmec::Vec3 position;
-        qmec::Vec3 color;
+        qmec::math::Vec3 position;
+        qmec::math::Vec3 color;
     };
     static_assert(sizeof(DebugVertex) == 24U);
 
     struct alignas(16) TransformConstants
     {
-        qmec::Mat4 model = qmec::Mat4::Identity();
-        qmec::Mat4 modelViewProjection = qmec::Mat4::Identity();
+        qmec::math::Mat4 model = qmec::math::Mat4::Identity();
+        qmec::math::Mat4 modelViewProjection = qmec::math::Mat4::Identity();
     };
 
     static_assert(sizeof(TransformConstants) == 128U);
@@ -49,7 +49,7 @@ namespace
 
         float color[3]{ 1.0f, 1.0f, 1.0f };
         float intensity{ 0.0f }; 
-        qmec::Mat4 lightViewProjection = qmec::Mat4::Identity();
+        qmec::math::Mat4 lightViewProjection = qmec::math::Mat4::Identity();
         float shadowDepthBias{0.0005f};
         float shadowSlopeBias{0.002f};
         std::uint32_t shadowsEnabled{0U};
@@ -72,6 +72,14 @@ namespace
 
     static_assert(sizeof(MaterialConstants) == 48U);
 
+    struct alignas(16) PostProcessConstants
+    {
+        float brightness{10.0f};
+        float padding[3]{};
+    };
+
+    static_assert(sizeof(PostProcessConstants) == 16U);
+
     struct alignas(16) CameraConstants
     {
         float position[3]{};
@@ -80,17 +88,10 @@ namespace
 
     static_assert(sizeof(CameraConstants) == 16U);
 
-    
-
-    
-
 }
 
-namespace qmec
+namespace qmec::graphics
 {
-
-
-
     using Microsoft::WRL::ComPtr;
 
     struct D3D11Renderer::Implementation
@@ -133,10 +134,50 @@ namespace qmec
         std::uint32_t shadowMapResolution{1024U};
         D3D11_VIEWPORT cameraViewport{};
 
+        ComPtr<ID3D11Texture2D> ppSceneTexture;
+        ComPtr<ID3D11RenderTargetView> ppRenderTargetView;
+        ComPtr<ID3D11ShaderResourceView> ppShaderResourceView;
+        ComPtr<ID3D11VertexShader> ppVertexShader{};
+        ComPtr<ID3D11PixelShader> ppPixelShader{};
+        ComPtr<ID3D11Buffer> ppConstantBuffer{};
+        ComPtr<ID3D11SamplerState> ppSampler{};
+        ComPtr<ID3D11RasterizerState> ppRasterizerState{};
+
 
 
         float aspectRatio{1.0f};
     };
+
+    namespace
+    {
+        bool CreatePostProcessTargets(ID3D11Device* device,UINT width,UINT height,ComPtr<ID3D11Texture2D>& sceneTexture,ComPtr<ID3D11RenderTargetView>& renderTargetView,ComPtr<ID3D11ShaderResourceView>& shaderResourceView) noexcept
+        {
+            D3D11_TEXTURE2D_DESC textureDescription{};
+            textureDescription.Width = width;
+            textureDescription.Height = height;
+            textureDescription.MipLevels = 1U;
+            textureDescription.ArraySize = 1U;
+            textureDescription.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+            textureDescription.SampleDesc.Count = 1U;
+            textureDescription.Usage = D3D11_USAGE_DEFAULT;
+            textureDescription.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+            if (FAILED(device->CreateTexture2D(&textureDescription, nullptr, sceneTexture.GetAddressOf())))
+            {
+                return false;
+            }
+
+            if (FAILED(device->CreateRenderTargetView(sceneTexture.Get(), nullptr, renderTargetView.GetAddressOf())) || FAILED(device->CreateShaderResourceView(sceneTexture.Get(), nullptr, shaderResourceView.GetAddressOf())))
+            {
+                shaderResourceView.Reset();
+                renderTargetView.Reset();
+                sceneTexture.Reset();
+                return false;
+            }
+
+            return true;
+        }
+    }
 
     D3D11Renderer::D3D11Renderer(): implementation_(std::make_unique<Implementation>())
     {
@@ -154,11 +195,7 @@ namespace qmec
         return Initialize(nativeWindowHandle, width, height, nullptr);
     }
 
-    bool D3D11Renderer::Initialize(
-        void* nativeWindowHandle,
-        std::uint32_t width,
-        std::uint32_t height,
-        ID3D11Device* sharedDevice) noexcept
+    bool D3D11Renderer::Initialize(void* nativeWindowHandle,std::uint32_t width,std::uint32_t height,ID3D11Device* sharedDevice) noexcept
     {
         if(nativeWindowHandle == nullptr || width == 0U || height == 0U)
         {
@@ -184,16 +221,7 @@ namespace qmec
         HRESULT deviceResult = E_FAIL;
         if (sharedDevice == nullptr)
         {
-            deviceResult = D3D11CreateDeviceAndSwapChain(
-                nullptr,
-                D3D_DRIVER_TYPE_HARDWARE,
-                nullptr,
-                0U,
-                nullptr,
-                0U,
-                D3D11_SDK_VERSION,
-                &swapChainDescription,
-                implementation_->swapChain.GetAddressOf(),
+            deviceResult = D3D11CreateDeviceAndSwapChain(nullptr,D3D_DRIVER_TYPE_HARDWARE, nullptr,0U,nullptr, 0U,D3D11_SDK_VERSION,&swapChainDescription,implementation_->swapChain.GetAddressOf(),
                 implementation_->device.GetAddressOf(),
                 &selectedFeatureLevel,
                 implementation_->deviceContext.GetAddressOf());
@@ -201,24 +229,17 @@ namespace qmec
         else
         {
             implementation_->device = sharedDevice;
-            implementation_->device->GetImmediateContext(
-                implementation_->deviceContext.GetAddressOf());
+            implementation_->device->GetImmediateContext(implementation_->deviceContext.GetAddressOf());
 
             ComPtr<IDXGIDevice> dxgiDevice{};
             ComPtr<IDXGIAdapter> adapter{};
             ComPtr<IDXGIFactory> factory{};
-            if (FAILED(implementation_->device.As(&dxgiDevice))
-                || FAILED(dxgiDevice->GetAdapter(adapter.GetAddressOf()))
-                || FAILED(adapter->GetParent(
-                    IID_PPV_ARGS(factory.GetAddressOf()))))
+            if (FAILED(implementation_->device.As(&dxgiDevice))|| FAILED(dxgiDevice->GetAdapter(adapter.GetAddressOf()))|| FAILED(adapter->GetParent(IID_PPV_ARGS(factory.GetAddressOf()))))
             {
                 return false;
             }
 
-            deviceResult = factory->CreateSwapChain(
-                implementation_->device.Get(),
-                &swapChainDescription,
-                implementation_->swapChain.GetAddressOf());
+            deviceResult = factory->CreateSwapChain(implementation_->device.Get(), &swapChainDescription,implementation_->swapChain.GetAddressOf());
         }
 
         if(FAILED(deviceResult))
@@ -276,20 +297,13 @@ namespace qmec
             return false;
         }
 
-        const HRESULT vertexShaderResult = implementation_->device->CreateVertexShader(vertexShaderBytecode->GetBufferPointer(),
-                vertexShaderBytecode->GetBufferSize(),
-                nullptr,
-                implementation_->vertexShader.GetAddressOf());
+        const HRESULT vertexShaderResult = implementation_->device->CreateVertexShader(vertexShaderBytecode->GetBufferPointer(),vertexShaderBytecode->GetBufferSize(),nullptr,implementation_->vertexShader.GetAddressOf());
         if(FAILED(vertexShaderResult))
         {
             return false;
         }
 
-        const HRESULT pixelShaderResult = implementation_->device->CreatePixelShader(
-                pixelShaderBytecode->GetBufferPointer(),
-                pixelShaderBytecode->GetBufferSize(),
-                nullptr,
-                implementation_->pixelShader.GetAddressOf());
+        const HRESULT pixelShaderResult = implementation_->device->CreatePixelShader(pixelShaderBytecode->GetBufferPointer(),pixelShaderBytecode->GetBufferSize(),nullptr,implementation_->pixelShader.GetAddressOf());
         if(FAILED(pixelShaderResult))
         {
             return false;
@@ -350,8 +364,7 @@ namespace qmec
             },
         };
 
-        const HRESULT InputAssemblerBuild = implementation_->device->CreateInputLayout(inputElements,5U,
-            vertexShaderBytecode->GetBufferPointer(), vertexShaderBytecode->GetBufferSize(),
+        const HRESULT InputAssemblerBuild = implementation_->device->CreateInputLayout(inputElements,5U,vertexShaderBytecode->GetBufferPointer(), vertexShaderBytecode->GetBufferSize(),
             implementation_->inputLayout.GetAddressOf());
 
         if (FAILED(InputAssemblerBuild))
@@ -373,8 +386,7 @@ namespace qmec
 
        
 
-        const HRESULT constantBufferResult =implementation_->device->CreateBuffer(&constantBufferDescription,nullptr,
-                implementation_->transformConstantBuffer.GetAddressOf());
+        const HRESULT constantBufferResult =implementation_->device->CreateBuffer(&constantBufferDescription,nullptr,implementation_->transformConstantBuffer.GetAddressOf());
 
         if (FAILED(constantBufferResult))
         {
@@ -401,10 +413,7 @@ namespace qmec
         D3D11_SUBRESOURCE_DATA lightData{};
         lightData.pSysMem = &initialLight;
 
-        const HRESULT lightBufferResult = implementation_->device->CreateBuffer(
-                &lightBufferDescription,
-                &lightData,
-                implementation_->lightConstantBuffer.GetAddressOf());
+        const HRESULT lightBufferResult = implementation_->device->CreateBuffer(&lightBufferDescription,&lightData,implementation_->lightConstantBuffer.GetAddressOf());
 
         if (FAILED(lightBufferResult))
         {
@@ -416,10 +425,7 @@ namespace qmec
             implementation_->lightConstantBuffer.Get()
         };
 
-        implementation_->deviceContext->PSSetConstantBuffers(
-            1U,
-            1U,
-            lightBuffers);
+        implementation_->deviceContext->PSSetConstantBuffers(1U,1U,lightBuffers);
         implementation_->deviceContext->VSSetConstantBuffers(1U, 1U, lightBuffers);
 
         const MaterialConstants initialMaterial{};
@@ -430,9 +436,7 @@ namespace qmec
         materialBufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
         D3D11_SUBRESOURCE_DATA materialData{};
         materialData.pSysMem = &initialMaterial;
-        if (FAILED(implementation_->device->CreateBuffer(
-            &materialBufferDescription, &materialData,
-            implementation_->materialConstantBuffer.GetAddressOf())))
+        if (FAILED(implementation_->device->CreateBuffer(&materialBufferDescription, &materialData, implementation_->materialConstantBuffer.GetAddressOf())))
         {
             return false;
         }
@@ -447,14 +451,16 @@ namespace qmec
         cameraBufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
         D3D11_SUBRESOURCE_DATA cameraData{};
         cameraData.pSysMem = &initialCamera;
-        if (FAILED(implementation_->device->CreateBuffer(
-            &cameraBufferDescription, &cameraData,
-            implementation_->cameraConstantBuffer.GetAddressOf())))
+        if (FAILED(implementation_->device->CreateBuffer(&cameraBufferDescription, &cameraData,implementation_->cameraConstantBuffer.GetAddressOf())))
         {
             return false;
         }
         ID3D11Buffer* cameraBuffer = implementation_->cameraConstantBuffer.Get();
         implementation_->deviceContext->PSSetConstantBuffers(3U, 1U, &cameraBuffer);
+
+
+        
+
 
         ImageData diffuseImage{};
         if(!LoadImageRgba8( "Assets/Textures/MicrosoftTeams-image (1).png",diffuseImage))
@@ -484,10 +490,7 @@ namespace qmec
             return false;
         }
 
-        const HRESULT textureViewResult = implementation_->device->CreateShaderResourceView(
-                implementation_->diffuseTexture.Get(),
-                nullptr,
-                implementation_->diffuseTextureView.GetAddressOf());
+        const HRESULT textureViewResult = implementation_->device->CreateShaderResourceView(implementation_->diffuseTexture.Get(),nullptr,implementation_->diffuseTextureView.GetAddressOf());
 
         if(FAILED(textureViewResult))
         {
@@ -518,16 +521,14 @@ namespace qmec
         depthTextureDescription.Usage = D3D11_USAGE_DEFAULT;
         depthTextureDescription.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 
-        const HRESULT depthTextureResult =implementation_->device->CreateTexture2D(&depthTextureDescription,nullptr,
-                implementation_->depthStencilTexture.GetAddressOf());
+        const HRESULT depthTextureResult =implementation_->device->CreateTexture2D(&depthTextureDescription,nullptr,implementation_->depthStencilTexture.GetAddressOf());
 
         if (FAILED(depthTextureResult))
         {
             return false;
         }
 
-        const HRESULT depthStencilViewResult =
-            implementation_->device->CreateDepthStencilView( implementation_->depthStencilTexture.Get(),nullptr,implementation_->depthStencilView.GetAddressOf());
+        const HRESULT depthStencilViewResult = implementation_->device->CreateDepthStencilView(implementation_->depthStencilTexture.Get(),nullptr,implementation_->depthStencilView.GetAddressOf());
 
         if(FAILED(depthStencilViewResult))
         {
@@ -544,9 +545,7 @@ namespace qmec
         lightDepthDescription.Usage = D3D11_USAGE_DEFAULT;
         lightDepthDescription.BindFlags =  D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
 
-        if (FAILED(implementation_->device->CreateTexture2D(
-            &lightDepthDescription, nullptr,
-            implementation_->lightDepthTexture.GetAddressOf())))
+        if (FAILED(implementation_->device->CreateTexture2D(&lightDepthDescription, nullptr,implementation_->lightDepthTexture.GetAddressOf())))
         {
             return false;
         }
@@ -556,9 +555,7 @@ namespace qmec
         lightDepthViewDescription.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
         lightDepthViewDescription.Texture2D.MipSlice = 0U;
 
-        if (FAILED(implementation_->device->CreateDepthStencilView(
-            implementation_->lightDepthTexture.Get(), &lightDepthViewDescription,
-            implementation_->lightDepthStencilView.GetAddressOf())))
+        if (FAILED(implementation_->device->CreateDepthStencilView(implementation_->lightDepthTexture.Get(), &lightDepthViewDescription,implementation_->lightDepthStencilView.GetAddressOf())))
         {
             return false;
         }
@@ -570,9 +567,7 @@ namespace qmec
         lightResourceViewDescription.Texture2D.MostDetailedMip = 0U;
         lightResourceViewDescription.Texture2D.MipLevels = 1U;
 
-        if (FAILED(implementation_->device->CreateShaderResourceView(
-            implementation_->lightDepthTexture.Get(), &lightResourceViewDescription,
-            implementation_->lightTextureView.GetAddressOf())))
+        if (FAILED(implementation_->device->CreateShaderResourceView(implementation_->lightDepthTexture.Get(), &lightResourceViewDescription,implementation_->lightTextureView.GetAddressOf())))
         {
             return false;
         }
@@ -598,9 +593,7 @@ namespace qmec
         ComPtr<ID3DBlob> debugVertexBytecode{};
         ComPtr<ID3DBlob> debugPixelBytecode{};
         shaderErrors.Reset();
-        if (FAILED(D3DCompileFromFile(L"Shaders/DebugLines.hlsl", nullptr,
-            D3D_COMPILE_STANDARD_FILE_INCLUDE, "VertexMain", "vs_5_0",
-            shaderCompileFlags, 0U, debugVertexBytecode.GetAddressOf(),
+        if (FAILED(D3DCompileFromFile(L"Shaders/DebugLines.hlsl", nullptr,D3D_COMPILE_STANDARD_FILE_INCLUDE, "VertexMain", "vs_5_0", shaderCompileFlags, 0U, debugVertexBytecode.GetAddressOf(),
             shaderErrors.GetAddressOf())))
         {
             if (shaderErrors)
@@ -608,31 +601,21 @@ namespace qmec
             return false;
         }
         shaderErrors.Reset();
-        if (FAILED(D3DCompileFromFile(L"Shaders/DebugLines.hlsl", nullptr,
-            D3D_COMPILE_STANDARD_FILE_INCLUDE, "PixelMain", "ps_5_0",
-            shaderCompileFlags, 0U, debugPixelBytecode.GetAddressOf(),
-            shaderErrors.GetAddressOf())))
+        if (FAILED(D3DCompileFromFile(L"Shaders/DebugLines.hlsl", nullptr,D3D_COMPILE_STANDARD_FILE_INCLUDE, "PixelMain", "ps_5_0",shaderCompileFlags, 0U, debugPixelBytecode.GetAddressOf(),shaderErrors.GetAddressOf())))
         {
             if (shaderErrors)
                 OutputDebugStringA(static_cast<const char*>(shaderErrors->GetBufferPointer()));
             return false;
         }
-        if (FAILED(implementation_->device->CreateVertexShader(
-                debugVertexBytecode->GetBufferPointer(), debugVertexBytecode->GetBufferSize(),
-                nullptr, implementation_->debugVertexShader.GetAddressOf()))
-            || FAILED(implementation_->device->CreatePixelShader(
-                debugPixelBytecode->GetBufferPointer(), debugPixelBytecode->GetBufferSize(),
+        if (FAILED(implementation_->device->CreateVertexShader( debugVertexBytecode->GetBufferPointer(), debugVertexBytecode->GetBufferSize(),
+                nullptr, implementation_->debugVertexShader.GetAddressOf())) || FAILED(implementation_->device->CreatePixelShader(debugPixelBytecode->GetBufferPointer(), debugPixelBytecode->GetBufferSize(),
                 nullptr, implementation_->debugPixelShader.GetAddressOf())))
             return false;
 
-        const D3D11_INPUT_ELEMENT_DESC debugElements[]{
-            {"POSITION", 0U, DXGI_FORMAT_R32G32B32_FLOAT, 0U,
-                static_cast<UINT>(offsetof(DebugVertex, position)), D3D11_INPUT_PER_VERTEX_DATA, 0U},
+        const D3D11_INPUT_ELEMENT_DESC debugElements[]{{"POSITION", 0U, DXGI_FORMAT_R32G32B32_FLOAT, 0U,static_cast<UINT>(offsetof(DebugVertex, position)), D3D11_INPUT_PER_VERTEX_DATA, 0U},
             {"COLOR", 0U, DXGI_FORMAT_R32G32B32_FLOAT, 0U,
                 static_cast<UINT>(offsetof(DebugVertex, color)), D3D11_INPUT_PER_VERTEX_DATA, 0U}};
-        if (FAILED(implementation_->device->CreateInputLayout(debugElements, 2U,
-            debugVertexBytecode->GetBufferPointer(), debugVertexBytecode->GetBufferSize(),
-            implementation_->debugInputLayout.GetAddressOf())))
+        if (FAILED(implementation_->device->CreateInputLayout(debugElements, 2U, debugVertexBytecode->GetBufferPointer(), debugVertexBytecode->GetBufferSize(),implementation_->debugInputLayout.GetAddressOf())))
             return false;
 
         D3D11_BUFFER_DESC debugConstants{};
@@ -652,10 +635,78 @@ namespace qmec
             &debugDepth, implementation_->debugDepthState.GetAddressOf())))
             return false;
 
+        ComPtr<ID3DBlob> ppVertexBytecode{};
+        ComPtr<ID3DBlob> ppPixelBytecode{};
+        shaderErrors.Reset();
+        if (FAILED(D3DCompileFromFile(L"Shaders/PostProcess.hlsl", nullptr,
+            D3D_COMPILE_STANDARD_FILE_INCLUDE, "VertexMain", "vs_5_0", shaderCompileFlags, 0U,
+            ppVertexBytecode.GetAddressOf(), shaderErrors.GetAddressOf())))
+        {
+            if (shaderErrors)
+                OutputDebugStringA(static_cast<const char*>(shaderErrors->GetBufferPointer()));
+            return false;
+        }
+
+        shaderErrors.Reset();
+        if (FAILED(D3DCompileFromFile(L"Shaders/PostProcess.hlsl", nullptr,
+            D3D_COMPILE_STANDARD_FILE_INCLUDE, "PixelMain", "ps_5_0", shaderCompileFlags, 0U,
+            ppPixelBytecode.GetAddressOf(), shaderErrors.GetAddressOf())))
+        {
+            if (shaderErrors)
+                OutputDebugStringA(static_cast<const char*>(shaderErrors->GetBufferPointer()));
+            return false;
+        }
+
+        if (FAILED(implementation_->device->CreateVertexShader(
+                ppVertexBytecode->GetBufferPointer(), ppVertexBytecode->GetBufferSize(), nullptr,
+                implementation_->ppVertexShader.GetAddressOf())) ||
+            FAILED(implementation_->device->CreatePixelShader(
+                ppPixelBytecode->GetBufferPointer(), ppPixelBytecode->GetBufferSize(), nullptr,
+                implementation_->ppPixelShader.GetAddressOf())))
+        {
+            return false;
+        }
+
+        D3D11_SAMPLER_DESC ppSamplerDescription{};
+        ppSamplerDescription.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+        ppSamplerDescription.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+        ppSamplerDescription.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+        ppSamplerDescription.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+        ppSamplerDescription.MaxLOD = D3D11_FLOAT32_MAX;
+        if (FAILED(implementation_->device->CreateSamplerState(
+            &ppSamplerDescription, implementation_->ppSampler.GetAddressOf())))
+        {
+            return false;
+        }
+
+        const PostProcessConstants initialPostProcessConstants{};
+        D3D11_BUFFER_DESC ppConstantBufferDescription{};
+        ppConstantBufferDescription.ByteWidth = static_cast<UINT>(sizeof(PostProcessConstants));
+        ppConstantBufferDescription.Usage = D3D11_USAGE_DEFAULT;
+        ppConstantBufferDescription.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+        D3D11_SUBRESOURCE_DATA ppConstantBufferData{};
+        ppConstantBufferData.pSysMem = &initialPostProcessConstants;
+        if (FAILED(implementation_->device->CreateBuffer(
+            &ppConstantBufferDescription,
+            &ppConstantBufferData,
+            implementation_->ppConstantBuffer.GetAddressOf())))
+        {
+            return false;
+        }
+
+        D3D11_RASTERIZER_DESC ppRasterizerDescription{};
+        ppRasterizerDescription.FillMode = D3D11_FILL_SOLID;
+        ppRasterizerDescription.CullMode = D3D11_CULL_NONE;
+        ppRasterizerDescription.DepthClipEnable = TRUE;
+        if (FAILED(implementation_->device->CreateRasterizerState(
+            &ppRasterizerDescription, implementation_->ppRasterizerState.GetAddressOf())))
+        {
+            return false;
+        }
+
         ComPtr<ID3D11Texture2D> backBuffer{};
-        const HRESULT backBufferResult = implementation_->swapChain->GetBuffer(
-            0U,
-            IID_PPV_ARGS(backBuffer.GetAddressOf()));
+        const HRESULT backBufferResult = implementation_->swapChain->GetBuffer(0U,IID_PPV_ARGS(backBuffer.GetAddressOf()));
         if(FAILED(backBufferResult))
         {
             return false;
@@ -667,26 +718,25 @@ namespace qmec
             return false;
         }
 
+        if (!CreatePostProcessTargets(implementation_->device.Get(), width, height,
+            implementation_->ppSceneTexture, implementation_->ppRenderTargetView,
+            implementation_->ppShaderResourceView))
+        {
+            return false;
+        }
+
+
+
         ID3D11RenderTargetView* renderTargets[] =
         {
             implementation_->renderTargetView.Get()
         };
-        implementation_->deviceContext->OMSetRenderTargets(
-            1U,
-            renderTargets,
-            implementation_->depthStencilView.Get());
+        implementation_->deviceContext->OMSetRenderTargets(1U,renderTargets,implementation_->depthStencilView.Get());
 
 
         
 
-        const D3D11_VIEWPORT viewport{
-            0.0F,
-            0.0F,
-            static_cast<float>(width),
-            static_cast<float>(height),
-            0.0F,
-            1.0F
-        };
+        const D3D11_VIEWPORT viewport{0.0F, 0.0F,static_cast<float>(width),static_cast<float>(height),0.0F,1.0F};
         implementation_->deviceContext->RSSetViewports(1U, &viewport);
         implementation_->cameraViewport = viewport;
 
@@ -696,33 +746,33 @@ namespace qmec
 
     bool D3D11Renderer::Resize(std::uint32_t width, std::uint32_t height) noexcept
     {
-        if (implementation_ == nullptr || implementation_->swapChain == nullptr
-            || implementation_->device == nullptr || implementation_->deviceContext == nullptr
+        if (implementation_ == nullptr || implementation_->swapChain == nullptr|| implementation_->device == nullptr || implementation_->deviceContext == nullptr
             || width == 0 || height == 0)
             return false;
 
-        // Release the current back-buffer binding before DXGI resizes its buffers.
+        ID3D11ShaderResourceView* nullShaderResources[4]{};
+        implementation_->deviceContext->PSSetShaderResources(0U, 4U, nullShaderResources);
         implementation_->deviceContext->OMSetRenderTargets(0U, nullptr, nullptr);
         implementation_->renderTargetView.Reset();
+        implementation_->ppRenderTargetView.Reset();
+        implementation_->ppShaderResourceView.Reset();
+        implementation_->ppSceneTexture.Reset();
         implementation_->depthStencilView.Reset();
         implementation_->depthStencilTexture.Reset();
 
-        const HRESULT result = implementation_->swapChain->ResizeBuffers(
-            0U, width, height, DXGI_FORMAT_UNKNOWN, 0U);
+        const HRESULT result = implementation_->swapChain->ResizeBuffers(0U, width, height, DXGI_FORMAT_UNKNOWN, 0U);
 
         if (FAILED(result))
             return false;
 
         ComPtr<ID3D11Texture2D> backBuffer{};
 
-        const HRESULT bufferResult = implementation_->swapChain->GetBuffer(
-            0U, IID_PPV_ARGS(backBuffer.GetAddressOf()));
+        const HRESULT bufferResult = implementation_->swapChain->GetBuffer(0U, IID_PPV_ARGS(backBuffer.GetAddressOf()));
 
         if (FAILED(bufferResult))
             return false;
 
-        const HRESULT viewResult = implementation_->device->CreateRenderTargetView(
-            backBuffer.Get(), nullptr, implementation_->renderTargetView.GetAddressOf());
+        const HRESULT viewResult = implementation_->device->CreateRenderTargetView(backBuffer.Get(), nullptr, implementation_->renderTargetView.GetAddressOf());
 
         if (FAILED(viewResult))
             return false;
@@ -737,67 +787,52 @@ namespace qmec
         depthDescription.Usage = D3D11_USAGE_DEFAULT;
         depthDescription.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 
-        if (FAILED(implementation_->device->CreateTexture2D(
-            &depthDescription, nullptr, implementation_->depthStencilTexture.GetAddressOf()))
-            || FAILED(implementation_->device->CreateDepthStencilView(
+        if (FAILED(implementation_->device->CreateTexture2D(&depthDescription, nullptr, implementation_->depthStencilTexture.GetAddressOf())) || FAILED(implementation_->device->CreateDepthStencilView(
                 implementation_->depthStencilTexture.Get(), nullptr,
                 implementation_->depthStencilView.GetAddressOf())))
         {
             return false;
         }
 
-        ID3D11RenderTargetView* renderTargets[]{implementation_->renderTargetView.Get()};
-        implementation_->deviceContext->OMSetRenderTargets(
-            1U, renderTargets, implementation_->depthStencilView.Get());
+        if (!CreatePostProcessTargets(implementation_->device.Get(), width, height,
+            implementation_->ppSceneTexture, implementation_->ppRenderTargetView,
+            implementation_->ppShaderResourceView))
+        {
+            return false;
+        }
+
+        ID3D11RenderTargetView* renderTargets[]{implementation_->ppRenderTargetView.Get()};
+        implementation_->deviceContext->OMSetRenderTargets(1U, renderTargets, implementation_->depthStencilView.Get());
 
         implementation_->aspectRatio = static_cast<float>(width) / static_cast<float>(height);
 
-        const D3D11_VIEWPORT viewport{
-            0.0F,
-            0.0F,
-            static_cast<float>(width),
-            static_cast<float>(height),
-            0.0F,
-            1.0F
-        };
+        const D3D11_VIEWPORT viewport{0.0F,0.0F,static_cast<float>(width), static_cast<float>(height), 0.0F, 1.0F};
         implementation_->deviceContext->RSSetViewports(1U, &viewport);
         implementation_->cameraViewport = viewport;
 
         return true;
     }
 
-    bool D3D11Renderer::ClearFrame(
-        float red,
-        float green,
-        float blue,
-        float alpha) noexcept
+    bool D3D11Renderer::ClearFrame(float red,float green,float blue,float alpha) noexcept
     {
-        if (implementation_ == nullptr || implementation_->deviceContext == nullptr
-            || implementation_->swapChain == nullptr
-            || implementation_->renderTargetView == nullptr)
+        if (implementation_ == nullptr || implementation_->deviceContext == nullptr|| implementation_->swapChain == nullptr|| implementation_->renderTargetView == nullptr)
         {
             return false;
         }
 
         const float clearColor[]{ red, green, blue, alpha };
         ID3D11RenderTargetView* renderTarget = implementation_->renderTargetView.Get();
-        implementation_->deviceContext->OMSetRenderTargets(
-            1U, &renderTarget, implementation_->depthStencilView.Get());
-        implementation_->deviceContext->ClearRenderTargetView(
-            renderTarget, clearColor);
+        implementation_->deviceContext->OMSetRenderTargets(1U, &renderTarget, implementation_->depthStencilView.Get());
+        implementation_->deviceContext->ClearRenderTargetView(renderTarget, clearColor);
         if (implementation_->depthStencilView != nullptr)
         {
-            implementation_->deviceContext->ClearDepthStencilView(
-                implementation_->depthStencilView.Get(),
-                D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
-                1.0F, 0U);
+            implementation_->deviceContext->ClearDepthStencilView(implementation_->depthStencilView.Get(),D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,1.0F, 0U);
         }
 
         return SUCCEEDED(implementation_->swapChain->Present(1U, 0U));
     }
 
-    bool D3D11Renderer::RenderFrame(float red, float green,float blue,float alpha, const Scene& scene,const AssetSystem& assets,
-        const Camera& camera,
+    bool D3D11Renderer::RenderFrame(float red, float green,float blue,float alpha, const Scene& scene,const AssetSystem& assets,const Camera& camera,
         std::span<const DebugLine> debugLines) noexcept
     {
         const Registry& registry = scene.GetRegistry();
@@ -805,7 +840,9 @@ namespace qmec
         const Mat4& projection = camera.ProjectionMatrix();
 
         const float clearColor[4] = {red, green, blue, alpha};
-        implementation_->deviceContext->ClearRenderTargetView(implementation_->renderTargetView.Get(),clearColor);
+        ID3D11RenderTargetView* sceneTarget = implementation_->ppRenderTargetView.Get();
+        implementation_->deviceContext->OMSetRenderTargets(1U, &sceneTarget, implementation_->depthStencilView.Get());
+        implementation_->deviceContext->ClearRenderTargetView(sceneTarget, clearColor);
         implementation_->deviceContext->ClearDepthStencilView( implementation_->depthStencilView.Get(),D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,1.0f,0U);
 
         ID3D11ShaderResourceView* textureViews[] =
@@ -826,8 +863,7 @@ namespace qmec
         Mat4 lightViewProjection = Mat4::Identity();
         bool hasDirectionalLight = false;
 
-        for (const Entity entity :
-        registry.GetEntitiesWith<DirectionalLightComponent>())
+        for (const Entity entity : registry.GetEntitiesWith<DirectionalLightComponent>())
         {
             const auto* light = registry.GetComponent<DirectionalLightComponent>(entity);
 
@@ -1091,7 +1127,7 @@ namespace qmec
         }
 
         
-        ID3D11RenderTargetView* cameraTarget = implementation_->renderTargetView.Get();
+        ID3D11RenderTargetView* cameraTarget = implementation_->ppRenderTargetView.Get();
         implementation_->deviceContext->OMSetRenderTargets(1U, &cameraTarget, implementation_->depthStencilView.Get());
         implementation_->deviceContext->RSSetViewports(1U, &implementation_->cameraViewport);
         implementation_->deviceContext->PSSetShader(implementation_->pixelShader.Get(), nullptr, 0U);
@@ -1124,16 +1160,14 @@ namespace qmec
                 description.BindFlags = D3D11_BIND_VERTEX_BUFFER;
                 description.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
                 ComPtr<ID3D11Buffer> buffer{};
-                if (FAILED(implementation_->device->CreateBuffer(
-                    &description, nullptr, buffer.GetAddressOf())))
+                if (FAILED(implementation_->device->CreateBuffer(&description, nullptr, buffer.GetAddressOf())))
                     return false;
                 implementation_->debugVertexBuffer = std::move(buffer);
                 implementation_->debugVertexCapacity = capacity;
             }
 
             D3D11_MAPPED_SUBRESOURCE mappedVertices{};
-            if (FAILED(implementation_->deviceContext->Map(implementation_->debugVertexBuffer.Get(), 0U, D3D11_MAP_WRITE_DISCARD,
-                0U, &mappedVertices)))
+            if (FAILED(implementation_->deviceContext->Map(implementation_->debugVertexBuffer.Get(), 0U, D3D11_MAP_WRITE_DISCARD,0U, &mappedVertices)))
                 return false;
             auto* vertices = static_cast<DebugVertex*>(mappedVertices.pData);
             for (size_t i = 0; i < debugLines.size(); ++i)
@@ -1167,11 +1201,34 @@ namespace qmec
             implementation_->deviceContext->OMSetDepthStencilState(nullptr, 0U);
         }
 
+        ID3D11RenderTargetView* backBufferTarget = implementation_->renderTargetView.Get();
+        implementation_->deviceContext->OMSetRenderTargets(1U, &backBufferTarget, nullptr);
+        implementation_->deviceContext->RSSetViewports(1U, &implementation_->cameraViewport);
+        implementation_->deviceContext->RSSetState(implementation_->ppRasterizerState.Get());
+        implementation_->deviceContext->OMSetDepthStencilState(nullptr, 0U);
+        implementation_->deviceContext->IASetInputLayout(nullptr);
+        implementation_->deviceContext->IASetVertexBuffers(0U, 0U, nullptr, nullptr, nullptr);
+        implementation_->deviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0U);
+        implementation_->deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        implementation_->deviceContext->VSSetShader(implementation_->ppVertexShader.Get(), nullptr, 0U);
+        implementation_->deviceContext->PSSetShader(implementation_->ppPixelShader.Get(), nullptr, 0U);
+
+        ID3D11ShaderResourceView* sceneTextureView = implementation_->ppShaderResourceView.Get();
+        implementation_->deviceContext->PSSetShaderResources(0U, 1U, &sceneTextureView);
+        ID3D11SamplerState* sceneSampler = implementation_->ppSampler.Get();
+        implementation_->deviceContext->PSSetSamplers(0U, 1U, &sceneSampler);
+        ID3D11Buffer* ppConstantBuffer = implementation_->ppConstantBuffer.Get();
+        implementation_->deviceContext->PSSetConstantBuffers(2U, 1U, &ppConstantBuffer);
+        implementation_->deviceContext->Draw(3U, 0U);
+
+        ID3D11ShaderResourceView* noSceneTexture = nullptr;
+        implementation_->deviceContext->PSSetShaderResources(0U, 1U, &noSceneTexture);
+        implementation_->deviceContext->RSSetState(nullptr);
+
         return SUCCEEDED(implementation_->swapChain->Present(1U, 0U));
     }
 
-    bool D3D11Renderer::RenderFrame(float red, float green, float blue, float alpha,const Scene& scene, const AssetSystem& assets, Entity cameraEntity,
-        std::span<const DebugLine> debugLines) noexcept
+    bool D3D11Renderer::RenderFrame(float red, float green, float blue, float alpha,const Scene& scene, const AssetSystem& assets, Entity cameraEntity, std::span<const DebugLine> debugLines) noexcept
     {
         const Registry& registry = scene.GetRegistry();
         const auto* cameraComponent = registry.GetComponent<CameraComponent>(cameraEntity);

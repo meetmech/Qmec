@@ -3,7 +3,7 @@
 #include "QMEC/Math/Quat.h"
 #include "QMEC/Math/Mat3.h"
 
-namespace qmec
+namespace qmec::scene::components
 {
     struct PhysicsMaterial
     {
@@ -71,4 +71,10 @@ namespace qmec
             }
         }
     };
+}
+
+namespace qmec
+{
+    using scene::components::PhysicsMaterial;
+    using scene::components::RigidBodyComponent;
 }

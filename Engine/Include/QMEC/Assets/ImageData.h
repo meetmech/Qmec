@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace qmec
+namespace qmec::assets
 {
     struct ImageData
     {
@@ -13,4 +13,9 @@ namespace qmec
     };
 
     [[nodiscard]] bool LoadImageRgba8(const char* filePath,ImageData& output);
+}
+namespace qmec
+{
+    using assets::ImageData;
+    using assets::LoadImageRgba8;
 }

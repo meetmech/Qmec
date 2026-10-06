@@ -5,7 +5,7 @@
 #include <vector>
 #include <span>
 
-namespace qmec
+namespace qmec::ecs
 {
     class IComponentPool
     {
@@ -38,3 +38,9 @@ namespace qmec
 }
 
 #include "QMEC/ECS/ComponentPool.inl"
+
+namespace qmec
+{
+    using ecs::IComponentPool;
+    using ecs::ComponentPool;
+}

@@ -3,7 +3,7 @@
 #include "QMEC/Scene/Components/RigidBodyComponent.h"
 #include "QMEC/Scene/Scene.h"
 
-namespace qmec
+namespace qmec::game
 {
     void VehicleController::OnUpdate(const ScriptContext& context)
     {

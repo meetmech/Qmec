@@ -10,7 +10,7 @@
 #include <queue>
 #include <cmath>
 
-namespace qmec
+namespace qmec::scene
 {
     namespace
     {

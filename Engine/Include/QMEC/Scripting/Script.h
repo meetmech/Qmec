@@ -10,13 +10,14 @@
 #include <utility>
 #include <vector>
 
-namespace qmec
+namespace qmec::scene { class Scene; }
+
+namespace qmec::scripting
 {
-    class Scene;
 
     struct ScriptContext
     {
-        Scene& scene;
+        qmec::scene::Scene& scene;
         Entity entity{};
         float deltaTime{};
     };
@@ -105,4 +106,15 @@ namespace qmec
     {
         std::vector<ScriptInstance> instances{};
     };
+}
+
+namespace qmec
+{
+    using scripting::ScriptContext;
+    using scripting::Script;
+    using scripting::ScriptTypeInfo;
+    using scripting::MakeEntityReferenceField;
+    using scripting::ScriptTypeRegistry;
+    using scripting::ScriptInstance;
+    using scripting::ScriptComponent;
 }

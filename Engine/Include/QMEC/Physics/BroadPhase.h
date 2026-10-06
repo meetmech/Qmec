@@ -5,7 +5,7 @@
 #include <span>
 #include <vector>
 
-namespace qmec
+namespace qmec::physics
 {
 	struct BroadPhaseCollider
 	{
@@ -19,4 +19,10 @@ namespace qmec
 	public:
 		std::vector<CollisionPair> FindPotentialPairs(std::span<const BroadPhaseCollider> colliders);
 	};
+}
+
+namespace qmec
+{
+    using physics::BroadPhaseCollider;
+    using physics::BroadPhase;
 }

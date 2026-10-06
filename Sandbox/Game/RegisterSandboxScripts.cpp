@@ -3,7 +3,7 @@
 #include "QMEC/Scripting/Script.h"
 #include "Game/VehicleController.h"
 
-namespace qmec
+namespace qmec::game
 {
     void RegisterSandboxScripts()
     {

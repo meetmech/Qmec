@@ -3,7 +3,7 @@
 
 #include <string>
 
-namespace qmec
+namespace qmec::scene
 {
     class SceneSerializer
     {
@@ -11,4 +11,9 @@ namespace qmec
         static bool Save(const Scene& scene, const std::string& path);
         static bool Load(Scene& scene, const std::string& path);
     };
+}
+
+namespace qmec
+{
+    using scene::SceneSerializer;
 }

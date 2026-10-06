@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <utility>
 
-namespace qmec
+namespace qmec::scripting
 {
     ScriptTypeRegistry& ScriptTypeRegistry::Instance() noexcept
     {

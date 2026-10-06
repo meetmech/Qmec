@@ -23,17 +23,17 @@
 
 int main()
 {
-    qmec::RegisterSandboxScripts();
+    qmec::game::RegisterSandboxScripts();
     std::cout << "QMEC starting...\n";
 
-    qmec::Win32Window window{};
+    qmec::platform::windows::Win32Window window{};
     if(!window.Initialize(L"QMEC", 1280U, 720U))
     {
         std::cerr << "Failed to create the QMEC window.\n";
         return 1;
     }
 
-    qmec::D3D11Renderer renderer{};
+    qmec::graphics::D3D11Renderer renderer{};
     if(!renderer.Initialize(
            window.NativeHandle(),
            window.ClientWidth(),
@@ -43,24 +43,24 @@ int main()
         return 1;
     }
 
-    qmec::D3D11MeshManager gpuMeshManager{renderer.GetDevice()};
-    qmec::AssetManager assetManager{};
-    qmec::AssetSystem assetSystem{assetManager, gpuMeshManager};
-    qmec::Scene scene{};
-    qmec::EntityFactory factory{scene.GetRegistry(), assetSystem};
+    qmec::graphics::D3D11MeshManager gpuMeshManager{renderer.GetDevice()};
+    qmec::assets::AssetManager assetManager{};
+    qmec::assets::AssetSystem assetSystem{assetManager, gpuMeshManager};
+    qmec::scene::Scene scene{};
+    qmec::scene::factory::EntityFactory factory{scene.GetRegistry(), assetSystem};
 
 
-    qmec::TransformComponent firstTransform{};
+    qmec::scene::components::TransformComponent firstTransform{};
     firstTransform.position = { -1.0f, 0.0f, 4.0f };
 
-    const qmec::Entity firstCube = factory.createCubeEntity(firstTransform);
+    const qmec::ecs::Entity firstCube = factory.createCubeEntity(firstTransform);
 
-    qmec::RigidBodyComponent firstRigidbody{};
+    qmec::scene::components::RigidBodyComponent firstRigidbody{};
     firstRigidbody.mass = 1.0f;
     firstRigidbody.inverseMass = 1.0f / firstRigidbody.mass;
 
-    qmec::ColliderComponent firstCollider{};
-    firstCollider.shape = qmec::BoxShape{.centre = {0.0f, 0.0f, 0.0f},.halfExtents = {0.5f, 0.5f, 0.5f}};
+    qmec::scene::components::ColliderComponent firstCollider{};
+    firstCollider.shape = qmec::physics::BoxShape{.centre = {0.0f, 0.0f, 0.0f},.halfExtents = {0.5f, 0.5f, 0.5f}};
 
     factory.addComponent(firstCube, firstRigidbody);
     factory.addComponent(firstCube, firstCollider);
@@ -70,17 +70,17 @@ int main()
     // Second cube
     // ------------------------------------------------------------
 
-    qmec::TransformComponent secondTransform{};
+    qmec::scene::components::TransformComponent secondTransform{};
     secondTransform.position = { -1.0f, 10.0f, 3.5f };
 
-    const qmec::Entity secondCube = factory.createCubeEntity(secondTransform);
+    const qmec::ecs::Entity secondCube = factory.createCubeEntity(secondTransform);
 
-    qmec::RigidBodyComponent secondRigidbody{};
+    qmec::scene::components::RigidBodyComponent secondRigidbody{};
     secondRigidbody.mass = 1.0f;
     secondRigidbody.inverseMass = 1.0f / secondRigidbody.mass;
 
-    qmec::ColliderComponent secondCollider{};
-    secondCollider.shape = qmec::BoxShape{.centre = {0.0f, 0.0f, 0.0f},.halfExtents = {0.5f, 0.5f, 0.5f}};
+    qmec::scene::components::ColliderComponent secondCollider{};
+    secondCollider.shape = qmec::physics::BoxShape{.centre = {0.0f, 0.0f, 0.0f},.halfExtents = {0.5f, 0.5f, 0.5f}};
 
     factory.addComponent(secondCube, secondRigidbody);
     factory.addComponent(secondCube, secondCollider);
@@ -89,34 +89,34 @@ int main()
    // Sphere
    // ------------------------------------------------------------
 
-    qmec::TransformComponent sphereTransformTwo{};
+    qmec::scene::components::TransformComponent sphereTransformTwo{};
     sphereTransformTwo.position = { 5.0f, 0.0f, 5.0f }; // Moves into the cylinder's side.
 
-    const qmec::Entity sphereTwo = factory.createSphereEntity(sphereTransformTwo);
+    const qmec::ecs::Entity sphereTwo = factory.createSphereEntity(sphereTransformTwo);
 
-    qmec::RigidBodyComponent sphereRigidbodyTwo{};
+    qmec::scene::components::RigidBodyComponent sphereRigidbodyTwo{};
     sphereRigidbodyTwo.mass = 1.0f;
     sphereRigidbodyTwo.inverseMass = 1.0f / sphereRigidbodyTwo.mass;
     sphereRigidbodyTwo.isKinematic = false;
     sphereRigidbodyTwo.velocity = {-2.0f, 0.0f, 0.0f};
 
-    qmec::ColliderComponent sphereColliderTwo{};
-    sphereColliderTwo.shape = qmec::SphereShape{.centre = {0.0f, 0.0f, 0.0f},.radius = 1.0f};
+    qmec::scene::components::ColliderComponent sphereColliderTwo{};
+    sphereColliderTwo.shape = qmec::physics::SphereShape{.centre = {0.0f, 0.0f, 0.0f},.radius = 1.0f};
 
     factory.addComponent(sphereTwo, sphereRigidbodyTwo);
     factory.addComponent(sphereTwo, sphereColliderTwo);
 
-    qmec::TransformComponent sphereTransform{};
+    qmec::scene::components::TransformComponent sphereTransform{};
     sphereTransform.position = { 2.0f, 4.0f, 5.0f }; 
-    const qmec::Entity sphere = factory.createSphereEntity(sphereTransform);
+    const qmec::ecs::Entity sphere = factory.createSphereEntity(sphereTransform);
 
-    qmec::RigidBodyComponent sphereRigidbody{};
+    qmec::scene::components::RigidBodyComponent sphereRigidbody{};
     sphereRigidbody.mass = 10.0f;
     sphereRigidbody.inverseMass = 1.0f / sphereRigidbody.mass;
     sphereRigidbody.isKinematic = false;
 
-    qmec::ColliderComponent sphereCollider{};
-    sphereCollider.shape = qmec::SphereShape{
+    qmec::scene::components::ColliderComponent sphereCollider{};
+    sphereCollider.shape = qmec::physics::SphereShape{
         .centre = {0.0f, 0.0f, 0.0f},
         .radius = 1.0f
     };
@@ -125,18 +125,18 @@ int main()
     factory.addComponent(sphere, sphereCollider);
 
 
-    qmec::TransformComponent cylinderTransform{};
+    qmec::scene::components::TransformComponent cylinderTransform{};
     cylinderTransform.position = { 2.0f, 0.0f, 5.0f }; 
 
-    const qmec::Entity cylinder = factory.createCylinderEntity(cylinderTransform);
+    const qmec::ecs::Entity cylinder = factory.createCylinderEntity(cylinderTransform);
 
-    qmec::RigidBodyComponent cylinderRigidbody{};
+    qmec::scene::components::RigidBodyComponent cylinderRigidbody{};
     cylinderRigidbody.mass = 1.0f;
     cylinderRigidbody.inverseMass = 1.0f / cylinderRigidbody.mass;
     cylinderRigidbody.isKinematic = false;
 
-    qmec::ColliderComponent cylinderCollider{};
-    cylinderCollider.shape = qmec::CylinderShape{
+    qmec::scene::components::ColliderComponent cylinderCollider{};
+    cylinderCollider.shape = qmec::physics::CylinderShape{
         .centre = {0.0f, 0.0f, 0.0f},
         .radius = 1.0f,
         .halfHeight = 1.0f // Mesh total height is 2.
@@ -151,20 +151,20 @@ int main()
     // Ground plane
     // ------------------------------------------------------------
 
-    qmec::TransformComponent thirdTransform{};
+    qmec::scene::components::TransformComponent thirdTransform{};
     thirdTransform.position = { 8.0f, -3.0f, 4.0f };
     thirdTransform.scale = { 30.0f, 30.0f, 30.0f };
 
-    const qmec::Entity plane = factory.createPlaneEntity(thirdTransform);
+    const qmec::ecs::Entity plane = factory.createPlaneEntity(thirdTransform);
 
-    qmec::RigidBodyComponent thirdRigidbody{};
+    qmec::scene::components::RigidBodyComponent thirdRigidbody{};
      thirdRigidbody.mass = 1.0f;
 
     thirdRigidbody.inverseMass = 0.0f;
     thirdRigidbody.isKinematic = true;
 
-    qmec::ColliderComponent thirdCollider{};
-    thirdCollider.shape = qmec::PlaneShape{
+    qmec::scene::components::ColliderComponent thirdCollider{};
+    thirdCollider.shape = qmec::physics::PlaneShape{
         .centre = {0.0f, 0.0f, 0.0f},
         .halfWidthX = 0.5f,
         .halfLengthZ = 0.5f
@@ -173,15 +173,15 @@ int main()
     factory.addComponent(plane, thirdRigidbody);
     factory.addComponent(plane, thirdCollider);
 
-    qmec::CameraComponent cameraSettings{};
+    qmec::scene::components::CameraComponent cameraSettings{};
     cameraSettings.primary = true;
-    const qmec::Entity cameraEntity = factory.createCameraEntity(cameraSettings);
-    qmec::DirectionalLightComponent sunlight{};
+    const qmec::ecs::Entity cameraEntity = factory.createCameraEntity(cameraSettings);
+    qmec::scene::components::DirectionalLightComponent sunlight{};
     sunlight.color = {1.0f, 0.95f, 0.85f};
     sunlight.intensity = 1.0f;
-    qmec::TransformComponent lightTransform{};
-    lightTransform.rotation = qmec::Quat::FromYawPitch(-0.45f, -0.65f);
-    const qmec::Entity lightEntity =
+    qmec::scene::components::TransformComponent lightTransform{};
+    lightTransform.rotation = qmec::math::Quat::FromYawPitch(-0.45f, -0.65f);
+    const qmec::ecs::Entity lightEntity =
     factory.createDirectionalLightEntity(sunlight, lightTransform);
 
     if (!firstCube.IsValid() || !secondCube.IsValid() || !cameraEntity.IsValid()
@@ -194,21 +194,21 @@ int main()
     std::cout << "Scene ready: two cubes, two spheres, one cylinder, one plane, one camera, one directional light, "
         << assetSystem.GetMeshCount() << " shared meshes.\n";
 
-    const qmec::Vec3 cubePosition{0.0f, 0.0f, 4.0f};
-    qmec::Vec3 orbitPivot = cubePosition;
+    const qmec::math::Vec3 cubePosition{0.0f, 0.0f, 4.0f};
+    qmec::math::Vec3 orbitPivot = cubePosition;
 
-    qmec::Camera camera{};
+    qmec::scene::Camera camera{};
     camera.SetAspectRatio(static_cast<float>(window.ClientWidth())/static_cast<float>(window.ClientHeight()));
     camera.SetPosition({0.0f, 0.0f, 0.0f});
     camera.LookAt(orbitPivot);
 
-    qmec::DebugRenderer debug{};
+    qmec::graphics::debug::DebugRenderer debug{};
 
     auto previousFrameTime = std::chrono::steady_clock::now();
 
     while(window.ProcessMessages())
     {
-        if (window.IsKeyDown(qmec::Key::Escape))
+        if (window.IsKeyDown(qmec::input::Key::Escape))
         {
             break;
         }
@@ -227,20 +227,20 @@ int main()
             physicsAccumulator -= physicsStepTime;
         }
 
-        const qmec::MouseDelta mouseDelta = window.ConsumeMouseDelta();
+        const qmec::input::MouseDelta mouseDelta = window.ConsumeMouseDelta();
         const float mouseWheelDelta = window.ConsumeMouseWheelDelta();
 
-        const bool altDown = window.IsKeyDown(qmec::Key::Alt);
-        const bool orbiting = altDown && window.IsMouseButtonDown(qmec::MouseButton::Left);
-        const bool panning = window.IsMouseButtonDown(qmec::MouseButton::Middle);
-        const bool zoomDragging = altDown && window.IsMouseButtonDown(qmec::MouseButton::Right);
-        const bool flyLooking = !altDown && window.IsMouseButtonDown(qmec::MouseButton::Right);
-        const bool movingFast = window.IsKeyDown(qmec::Key::Shift);
+        const bool altDown = window.IsKeyDown(qmec::input::Key::Alt);
+        const bool orbiting = altDown && window.IsMouseButtonDown(qmec::input::MouseButton::Left);
+        const bool panning = window.IsMouseButtonDown(qmec::input::MouseButton::Middle);
+        const bool zoomDragging = altDown && window.IsMouseButtonDown(qmec::input::MouseButton::Right);
+        const bool flyLooking = !altDown && window.IsMouseButtonDown(qmec::input::MouseButton::Right);
+        const bool movingFast = window.IsKeyDown(qmec::input::Key::Shift);
 
         (void)mouseDelta;
         if (mouseWheelDelta)
         {
-            qmec::Vec3 newPosition =camera.Position() +camera.Forward() * mouseWheelDelta * 0.5;
+            qmec::math::Vec3 newPosition =camera.Position() +camera.Forward() * mouseWheelDelta * 0.5;
 
             camera.SetPosition(newPosition);
         }
@@ -262,7 +262,7 @@ int main()
             const float horizontal = mouseDelta.x * sensitivity;
             const float vertical = mouseDelta.y * sensitivity;
 
-            qmec::Vec3 pan = camera.Right() * horizontal + camera.Up() * vertical;
+            qmec::math::Vec3 pan = camera.Right() * horizontal + camera.Up() * vertical;
             camera.SetPosition(camera.Position() + pan);
             orbitPivot += pan;
 
@@ -275,14 +275,14 @@ int main()
             camera.AddYawPitch(mouseDelta.x * sensitivity,-mouseDelta.y * sensitivity);
         }
         (void)movingFast;
-        qmec::Vec3 movement{};
+        qmec::math::Vec3 movement{};
 
-        if (window.IsKeyDown(qmec::Key::W)) movement += camera.Forward();
-        if (window.IsKeyDown(qmec::Key::S)) movement += camera.Forward() * -1.0f;
-        if (window.IsKeyDown(qmec::Key::D)) movement += camera.Right();
-        if (window.IsKeyDown(qmec::Key::A)) movement += camera.Right() * -1.0f;
-        if (window.IsKeyDown(qmec::Key::E)) movement += camera.Up();
-        if (window.IsKeyDown(qmec::Key::Q)) movement += camera.Up() * -1.0f;
+        if (window.IsKeyDown(qmec::input::Key::W)) movement += camera.Forward();
+        if (window.IsKeyDown(qmec::input::Key::S)) movement += camera.Forward() * -1.0f;
+        if (window.IsKeyDown(qmec::input::Key::D)) movement += camera.Right();
+        if (window.IsKeyDown(qmec::input::Key::A)) movement += camera.Right() * -1.0f;
+        if (window.IsKeyDown(qmec::input::Key::E)) movement += camera.Up();
+        if (window.IsKeyDown(qmec::input::Key::Q)) movement += camera.Up() * -1.0f;
 
         if(movement.Length() > 0.0f)
         {
@@ -291,33 +291,33 @@ int main()
             camera.SetPosition(camera.Position() + movement);
         }
 
-        auto* cameraTransform = scene.GetRegistry().GetComponent<qmec::TransformComponent>(cameraEntity);
+        auto* cameraTransform = scene.GetRegistry().GetComponent<qmec::scene::components::TransformComponent>(cameraEntity);
         cameraTransform->position = camera.Position();
         cameraTransform->rotation = camera.Orientation();
         scene.runPhysics(deltaTime);
         debug.Clear();
        
         const auto& registry = scene.GetRegistry();
-        const qmec::Vec3 colliderColor{0.0f, 1.0f, 0.0f};
-        for (const qmec::Entity entity : registry.GetEntitiesWith<qmec::ColliderComponent>())
+        const qmec::math::Vec3 colliderColor{0.0f, 1.0f, 0.0f};
+        for (const qmec::ecs::Entity entity : registry.GetEntitiesWith<qmec::scene::components::ColliderComponent>())
         {
-            const auto* collider = registry.GetComponent<qmec::ColliderComponent>(entity);
-            const auto* transform = registry.GetComponent<qmec::TransformComponent>(entity);
+            const auto* collider = registry.GetComponent<qmec::scene::components::ColliderComponent>(entity);
+            const auto* transform = registry.GetComponent<qmec::scene::components::TransformComponent>(entity);
             if (collider == nullptr || transform == nullptr)
                 continue;
 
             std::visit([&](const auto& shape)
                 {
                 
-                    const auto worldShape = qmec::ToWorldShape(shape, *transform);
+                    const auto worldShape = qmec::physics::ToWorldShape(shape, *transform);
                     using Shape = std::decay_t<decltype(shape)>;
-                    if constexpr (std::is_same_v<Shape, qmec::BoxShape>)
+                    if constexpr (std::is_same_v<Shape, qmec::physics::BoxShape>)
                         debug.DrawBox(worldShape, colliderColor);
-                    else if constexpr (std::is_same_v<Shape, qmec::SphereShape>)
+                    else if constexpr (std::is_same_v<Shape, qmec::physics::SphereShape>)
                         debug.DrawSphere(worldShape.centre, worldShape.radius, colliderColor);
-                    else if constexpr (std::is_same_v<Shape, qmec::PlaneShape>)
+                    else if constexpr (std::is_same_v<Shape, qmec::physics::PlaneShape>)
                         debug.DrawPlane(worldShape, colliderColor);
-                    else if constexpr (std::is_same_v<Shape, qmec::CylinderShape>)
+                    else if constexpr (std::is_same_v<Shape, qmec::physics::CylinderShape>)
                         debug.DrawCylinder(worldShape, colliderColor);
                 }, collider->shape);
         }

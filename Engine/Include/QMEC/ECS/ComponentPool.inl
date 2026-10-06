@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <utility>
 
-namespace qmec
+namespace qmec::ecs
 {
     template<typename Component>
     bool ComponentPool<Component>::Add(Entity entity,const Component& component)

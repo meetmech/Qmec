@@ -5,7 +5,7 @@
 #include "QMEC/Graphics/D3D11MeshManager.h"
 #include "QMEC/Graphics/IMeshGenerator.h"
 
-namespace qmec
+namespace qmec::assets
 {
     class AssetSystem
     {
@@ -26,4 +26,9 @@ namespace qmec
         AssetManager& assetManager_;
         D3D11MeshManager& gpuMeshManager_;
     };
+}
+
+namespace qmec
+{
+    using assets::AssetSystem;
 }

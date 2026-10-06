@@ -3,7 +3,7 @@
 #include <utility>
 #include <limits>
 
-namespace qmec
+namespace qmec::graphics
 {
     D3D11MeshManager::D3D11MeshManager(Microsoft::WRL::ComPtr<ID3D11Device> device) : device_(std::move(device))
     {

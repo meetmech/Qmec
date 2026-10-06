@@ -4,7 +4,7 @@
 #include "QMEC/Physics/Collider/ColliderShapes.h"
 #include "QMEC/Scene/Components/TransformComponent.h"
 
-namespace qmec
+namespace qmec::physics
 {
     struct WorldBox
     {
@@ -53,4 +53,14 @@ namespace qmec
     [[nodiscard]] AABB CalculateBounds(const WorldPlane& plane) noexcept;
     [[nodiscard]] AABB CalculateBounds(const WorldSphere& sphere) noexcept;
     [[nodiscard]] AABB CalculateBounds(const WorldCylinder& cylinder) noexcept;
+}
+
+namespace qmec
+{
+    using physics::WorldBox;
+    using physics::WorldPlane;
+    using physics::WorldSphere;
+    using physics::WorldCylinder;
+    using physics::ToWorldShape;
+    using physics::CalculateBounds;
 }

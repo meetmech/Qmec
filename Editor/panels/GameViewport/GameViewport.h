@@ -5,26 +5,30 @@
 
 class QResizeEvent;
 
-class GameViewportSurface final : public QWidget
+namespace qmec::editor
 {
-    Q_OBJECT
+    class GameViewportSurface final : public QWidget
+    {
+        Q_OBJECT
 
-public:
-    explicit GameViewportSurface(QWidget* parent = nullptr);
+    public:
+        explicit GameViewportSurface(QWidget* parent = nullptr);
 
-signals:
-    void Resized(int width, int height);
+    signals:
+        void Resized(int width, int height);
 
-protected:
-    void resizeEvent(QResizeEvent* event) override;
-};
+    protected:
+        void resizeEvent(QResizeEvent* event) override;
+    };
 
-class GameViewport final : public QDockWidget
-{
-public:
-    explicit GameViewport(QWidget* parent = nullptr);
-    [[nodiscard]] GameViewportSurface* Surface() const noexcept { return surface_; }
+    class GameViewport final : public QDockWidget
+    {
+    public:
+        explicit GameViewport(QWidget* parent = nullptr);
+        [[nodiscard]] GameViewportSurface* Surface() const noexcept { return surface_; }
 
-private:
-    GameViewportSurface* surface_{};
-};
+    private:
+        GameViewportSurface* surface_{};
+    };
+
+}

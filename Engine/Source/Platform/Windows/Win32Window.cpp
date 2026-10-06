@@ -27,39 +27,39 @@ namespace
         }
     }
 
-    qmec::Key TranslateKey(WPARAM virtualKey) noexcept
+    qmec::input::Key TranslateKey(WPARAM virtualKey) noexcept
     {
         switch (virtualKey)
         {
         case 'W':
-            return qmec::Key::W;
+            return qmec::input::Key::W;
         case 'A':
-            return qmec::Key::A;
+            return qmec::input::Key::A;
         case 'S':
-            return qmec::Key::S;
+            return qmec::input::Key::S;
         case 'D':
-            return qmec::Key::D;
+            return qmec::input::Key::D;
         case 'Q':
-            return qmec::Key::Q;
+            return qmec::input::Key::Q;
         case 'E':
-            return qmec::Key::E;
+            return qmec::input::Key::E;
         case 'F':
-            return qmec::Key::F;
+            return qmec::input::Key::F;
         case VK_SHIFT:
-            return qmec::Key::Shift;
+            return qmec::input::Key::Shift;
         case VK_CONTROL:
-            return qmec::Key::Control;
+            return qmec::input::Key::Control;
         case VK_MENU:
-            return qmec::Key::Alt;
+            return qmec::input::Key::Alt;
         case VK_ESCAPE:
-            return qmec::Key::Escape;
+            return qmec::input::Key::Escape;
         default:
-            return qmec::Key::Count;
+            return qmec::input::Key::Count;
         }
     }
 }
 
-namespace qmec
+namespace qmec::platform::windows
 {
     Win32Window::~Win32Window() noexcept
     {

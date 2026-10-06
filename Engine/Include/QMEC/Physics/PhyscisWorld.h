@@ -8,7 +8,7 @@
 #include "QMEC/Scene/Components/RigidBodyComponent.h"
 #include "QMEC/Physics/Solver/ContactSolver.h"
 
-namespace qmec {
+namespace qmec::physics {
 
     class PhysicsWorld
     {
@@ -42,4 +42,9 @@ namespace qmec {
         NarrowPhase narrowPhase_;
         ContactSolver solver_;
     };
+}
+
+namespace qmec
+{
+    using physics::PhysicsWorld;
 }

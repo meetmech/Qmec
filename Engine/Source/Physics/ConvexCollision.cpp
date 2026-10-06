@@ -15,7 +15,7 @@
 #endif
 #include <Windows.h>
 
-namespace qmec
+namespace qmec::physics
 {
     namespace
     {

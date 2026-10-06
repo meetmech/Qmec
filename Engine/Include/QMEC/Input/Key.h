@@ -1,6 +1,6 @@
 #pragma once
 
-namespace qmec
+namespace qmec::input
 {
     enum class Key
     {
@@ -17,4 +17,9 @@ namespace qmec
         Escape,
         Count
     };
+}
+
+namespace qmec
+{
+    using input::Key;
 }

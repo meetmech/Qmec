@@ -2,7 +2,7 @@
 
 #include <utility>
 
-namespace qmec
+namespace qmec::assets
 {
     MeshHandle AssetManager::AddMesh(MeshData mesh)
     {

@@ -4,22 +4,26 @@
 #include <QDockWidget>
 
 class QTreeWidget;
-namespace qmec { class Scene; }
+namespace qmec::scene { class Scene; }
 
-class HierarchyPanel final : public QDockWidget
+namespace qmec::editor
 {
-    Q_OBJECT
+    class HierarchyPanel final : public QDockWidget
+    {
+        Q_OBJECT
 
-public :
-    explicit HierarchyPanel(const qmec::Scene& scene, QWidget* parent = nullptr);
-    void Refresh();
-    void ClearSelection();
+    public :
+        explicit HierarchyPanel(const qmec::scene::Scene& scene, QWidget* parent = nullptr);
+        void Refresh();
+        void ClearSelection();
 
-signals:
-    void EntitySelected(qmec::Entity entity);
-    void EntityReparentRequested(qmec::Entity child, qmec::Entity parent);
+    signals:
+        void EntitySelected(qmec::ecs::Entity entity);
+        void EntityReparentRequested(qmec::ecs::Entity child, qmec::ecs::Entity parent);
 
-private :
-    QTreeWidget* tree_;
-    const qmec::Scene& scene_;
-};
+    private :
+        QTreeWidget* tree_;
+        const qmec::scene::Scene& scene_;
+    };
+
+}

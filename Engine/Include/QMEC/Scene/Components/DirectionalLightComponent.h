@@ -2,7 +2,7 @@
 
 #include "QMEC/Math/Vec3.h"
 
-namespace qmec
+namespace qmec::scene::components
 {
     struct DirectionalLightComponent
     {
@@ -10,4 +10,9 @@ namespace qmec
         float intensity{1.0f};
         bool enabled{true};
     };
+}
+
+namespace qmec
+{
+    using scene::components::DirectionalLightComponent;
 }

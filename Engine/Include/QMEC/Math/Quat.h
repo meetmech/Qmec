@@ -2,7 +2,7 @@
 
 #include "QMEC/Math/Vec3.h"
 
-namespace qmec
+namespace qmec::math
 {
     struct Mat4;
 
@@ -51,4 +51,9 @@ namespace qmec
     [[nodiscard]] Quat operator*(Quat left, const Quat& right) noexcept;
 
     [[nodiscard]] float Dot(const Quat& left, const Quat& right) noexcept;
+}
+
+namespace qmec
+{
+    using math::Quat;
 }

@@ -2,7 +2,7 @@
 
 #include "QMEC/Math/Vec3.h"
 
-namespace qmec
+namespace qmec::graphics::debug
 {
     struct DebugLine
     {
@@ -10,4 +10,9 @@ namespace qmec
         Vec3 end{};
         Vec3 color{1.0f, 1.0f, 1.0f};
     };
+}
+
+namespace qmec
+{
+    using graphics::debug::DebugLine;
 }

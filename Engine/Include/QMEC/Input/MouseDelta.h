@@ -1,6 +1,6 @@
 #pragma once
 
-namespace qmec
+namespace qmec::input
 {
     enum class MouseButton
     {
@@ -16,4 +16,10 @@ namespace qmec
         float y{};
     };
 
+}
+
+namespace qmec
+{
+    using input::MouseButton;
+    using input::MouseDelta;
 }

@@ -1,7 +1,7 @@
 #include "QMEC/Math/Vec3.h"
 #include <cmath>
 
-namespace qmec
+namespace qmec::math
 {
 
     float Dot(const Vec3& a, const Vec3& b) noexcept

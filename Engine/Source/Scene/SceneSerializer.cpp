@@ -27,7 +27,7 @@
 #include <variant>
 #include <vector>
 
-namespace qmec
+namespace qmec::scene
 {
     namespace
     {

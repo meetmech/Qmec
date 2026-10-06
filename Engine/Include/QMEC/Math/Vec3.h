@@ -1,5 +1,5 @@
 #pragma once
-namespace qmec
+namespace qmec::math
 {
     struct Vec3
     {
@@ -26,4 +26,11 @@ namespace qmec
     Vec3 Cross(const Vec3& a, const Vec3& b) noexcept;
     
 
+}
+
+namespace qmec
+{
+    using math::Vec3;
+    using math::Dot;
+    using math::Cross;
 }

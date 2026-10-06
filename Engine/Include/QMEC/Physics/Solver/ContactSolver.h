@@ -2,7 +2,7 @@
 #include "QMEC/ECS/Registry.h"
 #include "QMEC/Physics/ContactManifold.h"
 
-namespace qmec
+namespace qmec::physics
 {
 
 	class ContactSolver
@@ -21,4 +21,9 @@ namespace qmec
 	};
 
 	
+}
+
+namespace qmec
+{
+    using physics::ContactSolver;
 }

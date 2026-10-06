@@ -175,6 +175,9 @@ add_custom_target(QMECAssets
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/Engine/Shaders/DebugLines.hlsl"
         "$<TARGET_FILE_DIR:QMECSandbox>/Shaders/DebugLines.hlsl"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/Engine/Shaders/PostProcess.hlsl"
+        "$<TARGET_FILE_DIR:QMECSandbox>/Shaders/PostProcess.hlsl"
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_CURRENT_SOURCE_DIR}/Assets"
         "$<TARGET_FILE_DIR:QMECSandbox>/Assets"
@@ -189,6 +192,9 @@ add_custom_target(QMECAssets
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/Engine/Shaders/DebugLines.hlsl"
         "$<TARGET_FILE_DIR:QMECEditor>/Shaders/DebugLines.hlsl"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/Engine/Shaders/PostProcess.hlsl"
+        "$<TARGET_FILE_DIR:QMECEditor>/Shaders/PostProcess.hlsl"
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_CURRENT_SOURCE_DIR}/Assets"
         "$<TARGET_FILE_DIR:QMECEditor>/Assets"

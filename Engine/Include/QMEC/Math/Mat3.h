@@ -2,7 +2,7 @@
 
 #include "QMEC/Math/Vec3.h"
 
-namespace qmec
+namespace qmec::math
 {
    
     struct Mat3
@@ -17,4 +17,9 @@ namespace qmec
                 values[2][0] * vector.x + values[2][1] * vector.y + values[2][2] * vector.z};
         }
     };
+}
+
+namespace qmec
+{
+    using math::Mat3;
 }

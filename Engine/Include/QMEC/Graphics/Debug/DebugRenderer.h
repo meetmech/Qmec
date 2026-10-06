@@ -6,12 +6,10 @@
 #include <span>
 #include <vector>
 
-namespace qmec
+namespace qmec::physics { struct AABB; struct WorldPlane; struct WorldBox; struct WorldCylinder; }
+
+namespace qmec::graphics::debug
 {
-    struct AABB;
-    struct WorldPlane;
-    struct WorldBox;
-    struct WorldCylinder;
 
  
     class DebugRenderer
@@ -22,17 +20,17 @@ namespace qmec
         
         void DrawRay(const Vec3& origin, const Vec3& direction, float length,const Vec3& color = {1.0f, 1.0f, 1.0f});
 
-        void DrawAABB(const AABB& bounds,const Vec3& color = {1.0f, 1.0f, 1.0f});
+        void DrawAABB(const qmec::physics::AABB& bounds,const Vec3& color = {1.0f, 1.0f, 1.0f});
 
         void DrawSphere(const Vec3& center, float radius,const Vec3& color = {1.0f, 1.0f, 1.0f});
 
-        void DrawPlane(const WorldPlane& plane,const Vec3& color = {1.0f, 1.0f, 1.0f});
+        void DrawPlane(const qmec::physics::WorldPlane& plane,const Vec3& color = {1.0f, 1.0f, 1.0f});
 
-        void DrawCylinder(const WorldCylinder& cylinder, const Vec3& color = {1.0f, 1.0f, 1.0f});
+        void DrawCylinder(const qmec::physics::WorldCylinder& cylinder, const Vec3& color = {1.0f, 1.0f, 1.0f});
 
   
         void DrawBox(const Vec3& center, const Vec3& halfExtents, const Vec3& color = {1.0f, 1.0f, 1.0f});
-        void DrawBox(const WorldBox& box,const Vec3& color = {1.0f, 1.0f, 1.0f});
+        void DrawBox(const qmec::physics::WorldBox& box,const Vec3& color = {1.0f, 1.0f, 1.0f});
 
         void DrawGrid();
 
@@ -48,4 +46,9 @@ namespace qmec
 
         int sphereSegments = 24;
     };
+}
+
+namespace qmec
+{
+    using graphics::debug::DebugRenderer;
 }

@@ -5,7 +5,7 @@
 
 #include <variant>
 
-namespace qmec
+namespace qmec::scene::components
 {
     struct ColliderComponent
     {  
@@ -14,4 +14,9 @@ namespace qmec
         bool isTrigger{false};
     };
 
+}
+
+namespace qmec
+{
+    using scene::components::ColliderComponent;
 }

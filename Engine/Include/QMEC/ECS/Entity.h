@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace qmec
+namespace qmec::ecs
 {
     using EntityIndex = std::uint32_t;
     using EntityGeneration = std::uint32_t;
@@ -20,4 +20,12 @@ namespace qmec
 
         bool operator==(const Entity&) const noexcept = default;
     };
+}
+
+namespace qmec
+{
+    using ecs::Entity;
+    using ecs::EntityIndex;
+    using ecs::EntityGeneration;
+    using ecs::InvalidEntityIndex;
 }

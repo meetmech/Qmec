@@ -2,7 +2,7 @@
 
 #include "QMEC/Graphics/MeshData.h"
 
-namespace qmec
+namespace qmec::graphics
 {
     class IMeshGenerator
     {
@@ -10,4 +10,9 @@ namespace qmec
         virtual ~IMeshGenerator() = default;
         [[nodiscard]] virtual MeshData Generate() const = 0;
     };
+}
+
+namespace qmec
+{
+    using graphics::IMeshGenerator;
 }

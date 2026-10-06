@@ -4,7 +4,7 @@
 #include "QMEC/Scene/Components/TransformComponent.h"
 #include "QMEC/Scene/Components/RigidBodyComponent.h"
 
-namespace qmec {
+namespace qmec::physics {
 
 	struct PhysicsBody
 	{
@@ -31,4 +31,11 @@ namespace qmec {
 		Vec3 normal;
 	};
 
+}
+
+namespace qmec
+{
+    using physics::PhysicsBody;
+    using physics::ContactPoint;
+    using physics::ContactManifold;
 }

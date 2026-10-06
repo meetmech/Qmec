@@ -4,7 +4,7 @@
 #include "QMEC/Math/Quat.h"
 #include "QMEC/Math/Vec3.h"
 
-namespace qmec
+namespace qmec::scene::components
 {
     struct TransformComponent
     {
@@ -33,4 +33,9 @@ namespace qmec
             return parent;
         }
     };
+}
+
+namespace qmec
+{
+    using scene::components::TransformComponent;
 }

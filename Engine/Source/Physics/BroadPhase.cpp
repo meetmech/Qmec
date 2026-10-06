@@ -1,7 +1,7 @@
 #include "QMEC/Physics/BroadPhase.h"
 #include "QMEC/ECS/Registry.h"
 
-namespace qmec
+namespace qmec::physics
 {
 	std::vector<CollisionPair> BroadPhase::FindPotentialPairs(std::span<const BroadPhaseCollider> colliders)
 	{

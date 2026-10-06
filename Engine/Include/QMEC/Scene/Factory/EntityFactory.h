@@ -17,7 +17,7 @@
 #include <string>
 #include <utility>
 
-namespace qmec
+namespace qmec::scene::factory
 {
     class EntityFactory
     {
@@ -167,3 +167,8 @@ namespace qmec
 }
 
 #include "QMEC/ECS/EntityFactory.inl"
+
+namespace qmec
+{
+    using scene::factory::EntityFactory;
+}

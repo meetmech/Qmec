@@ -4,7 +4,7 @@
 
 #include <cstdint>
 
-namespace qmec
+namespace qmec::scene::components
 {
     struct MeshRendererComponent
     {
@@ -12,4 +12,9 @@ namespace qmec
         std::uint32_t materialIndex{};
         bool visible{true};
     };
+}
+
+namespace qmec
+{
+    using scene::components::MeshRendererComponent;
 }

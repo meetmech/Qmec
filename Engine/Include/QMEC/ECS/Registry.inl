@@ -1,7 +1,7 @@
 #include "Registry.h"
 #pragma once
 
-namespace qmec
+namespace qmec::ecs
 {
     template<typename Component>
     inline std::vector<Component> Registry::GetAllComponents(Entity entity)

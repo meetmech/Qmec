@@ -3,10 +3,11 @@
 #include "QMEC/ECS/Entity.h"
 #include "QMEC/Math/Vec3.h"
 
-namespace qmec
+namespace qmec::scene { class Scene; }
+namespace qmec::scene::components { struct RigidBodyComponent; }
+
+namespace qmec::game
 {
-    class Scene;
-    struct RigidBodyComponent;
 
     struct GroundMaterial
     {
@@ -50,12 +51,18 @@ namespace qmec
 
         bool slipping{ false };
 
-        [[nodiscard]] bool RefreshColliderState(const Scene& scene, Entity wheelEntity) noexcept;
-        [[nodiscard]] bool UpdateGroundContact(Scene& scene,Entity wheelEntity,Entity chassisEntity,RigidBodyComponent& chassisBody) noexcept;
+        [[nodiscard]] bool RefreshColliderState(const qmec::scene::Scene& scene, Entity wheelEntity) noexcept;
+        [[nodiscard]] bool UpdateGroundContact(qmec::scene::Scene& scene,Entity wheelEntity,Entity chassisEntity,qmec::scene::components::RigidBodyComponent& chassisBody) noexcept;
         void Update(float deltaTime, float vehicleSpeed, const GroundMaterial& ground);
 
     private:
         void CalculateSlip(float vehicleSpeed);
         void CalculateFrictionLimits(const GroundMaterial& ground);
     };
+}
+
+namespace qmec
+{
+    using game::GroundMaterial;
+    using game::WheelController;
 }

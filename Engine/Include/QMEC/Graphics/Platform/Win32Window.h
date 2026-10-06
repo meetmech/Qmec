@@ -5,7 +5,7 @@
 #include <cstddef>
 #include "QMEC/Input/MouseDelta.h"
 
-namespace qmec
+namespace qmec::platform::windows
 {
     class Win32Window final
     {
@@ -44,4 +44,9 @@ namespace qmec
         std::array<bool, KeyCount> keyStates_{};
         std::array<bool, MouseButtonCount> mouseButtonStates_{};
     };
+}
+
+namespace qmec
+{
+    using platform::windows::Win32Window;
 }

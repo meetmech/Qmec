@@ -1,7 +1,7 @@
 #pragma once
 
 
-namespace qmec
+namespace qmec::scene::factory
 {
     template<typename Component>
     bool EntityFactory::addComponent(const Entity entity, const Component& component)

@@ -3,7 +3,7 @@
 #include <limits>
 #include <stdexcept>
 
-namespace qmec
+namespace qmec::ecs
 {
     Entity Registry::CreateEntity()
     {

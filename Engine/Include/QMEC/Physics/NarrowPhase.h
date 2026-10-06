@@ -7,7 +7,7 @@
 #include <span>
 #include <vector>
 
-namespace qmec
+namespace qmec::physics
 {
 
 	struct clipPlane
@@ -60,4 +60,13 @@ namespace qmec
 		
 
 	};
+}
+
+namespace qmec
+{
+    using physics::clipPlane;
+    using physics::NarrowPhaseCollider;
+    using physics::NarrowPhaseColliderPairs;
+    using physics::SATAxisType;
+    using physics::NarrowPhase;
 }

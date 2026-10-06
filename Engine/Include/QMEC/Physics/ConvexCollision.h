@@ -3,7 +3,7 @@
 #include "QMEC/Math/Vec3.h"
 #include "QMEC/Physics/NarrowPhase.h"
 
-namespace qmec
+namespace qmec::physics
 {
    
     struct MinkowskiVertex
@@ -60,4 +60,12 @@ namespace qmec
         static bool HandleTriangle(Simplex& simplex, Vec3& direction);
         static bool HandleTetrahedron(Simplex& simplex, Vec3& direction);
     };
+}
+
+namespace qmec
+{
+    using physics::MinkowskiVertex;
+    using physics::Simplex;
+    using physics::ConvexContact;
+    using physics::ConvexCollision;
 }

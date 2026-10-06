@@ -10,11 +10,11 @@
 
 struct ID3D11Device;
 
-namespace qmec
+namespace qmec::scene { class Camera; class Scene; }
+namespace qmec::assets { class AssetSystem; }
+
+namespace qmec::graphics
 {
-    class Camera;
-    class Scene;
-    class AssetSystem;
 
     class D3D11Renderer final
     {
@@ -36,13 +36,18 @@ namespace qmec
 
         [[nodiscard]] Microsoft::WRL::ComPtr<ID3D11Device> GetDevice() const noexcept;
 
-        [[nodiscard]] bool RenderFrame(float red,float green,float blue,float alpha,const Scene& scene,const AssetSystem& assets,
-                                       const Camera& camera, std::span<const DebugLine> debugLines = {}) noexcept;
-        [[nodiscard]] bool RenderFrame(float red,float green,float blue,float alpha,const Scene& scene,const AssetSystem& assets,
-                                       Entity cameraEntity, std::span<const DebugLine> debugLines = {}) noexcept;
+        [[nodiscard]] bool RenderFrame(float red,float green,float blue,float alpha,const qmec::scene::Scene& scene, const qmec::assets::AssetSystem& assets,
+                                       const qmec::scene::Camera& camera, std::span<const DebugLine> debugLines = {}) noexcept;
+        [[nodiscard]] bool RenderFrame(float red,float green,float blue,float alpha,const qmec::scene::Scene& scene, const qmec::assets::AssetSystem& assets,
+                                       qmec::ecs::Entity cameraEntity, std::span<const DebugLine> debugLines = {}) noexcept;
 
     private:
         struct Implementation;
         std::unique_ptr<Implementation> implementation_;
     };
+}
+
+namespace qmec
+{
+    using graphics::D3D11Renderer;
 }

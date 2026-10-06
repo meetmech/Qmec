@@ -19,7 +19,7 @@
 #endif
 #include <Windows.h>
 
-namespace qmec
+namespace qmec::physics
 {
     static std::vector<Vec3> sutherlandHodgmanClip(const std::vector<Vec3>& clipPolygon,const clipPlane& plane)
     {
@@ -764,7 +764,7 @@ namespace qmec
         return true;
     }
 
-    bool qmec::NarrowPhase::testBoxBox(const NarrowPhaseCollider& boxColliderOne,const NarrowPhaseCollider& boxColliderTwo,ContactManifold& manifoldOut)
+    bool qmec::physics::NarrowPhase::testBoxBox(const NarrowPhaseCollider& boxColliderOne,const NarrowPhaseCollider& boxColliderTwo,ContactManifold& manifoldOut)
     {
         const WorldBox boxOne =ToWorldShape(std::get<BoxShape>(boxColliderOne.collider->shape),*boxColliderOne.transform);
 

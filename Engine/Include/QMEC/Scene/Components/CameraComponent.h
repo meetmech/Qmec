@@ -1,6 +1,6 @@
 #pragma once
 
-namespace qmec
+namespace qmec::scene::components
 {
     struct CameraComponent
     {
@@ -9,4 +9,9 @@ namespace qmec
         float farPlane{100.0f};
         bool primary{};
     };
+}
+
+namespace qmec
+{
+    using scene::components::CameraComponent;
 }

@@ -1,7 +1,7 @@
 #pragma once
 #include "QMEC/Math/Vec3.h"
 
-namespace qmec
+namespace qmec::math
 {
 
 	struct alignas(16) Mat4
@@ -30,4 +30,9 @@ namespace qmec
 	
 
 
+}
+
+namespace qmec
+{
+    using math::Mat4;
 }

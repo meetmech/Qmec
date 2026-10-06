@@ -4,7 +4,7 @@
 #include "QMEC/Physics/Collider/WorldShapes.h"
 #include <cmath>
 
-namespace qmec
+namespace qmec::graphics::debug
 {
     void DebugRenderer::DrawLine(const Vec3& start, const Vec3& end, const Vec3& color)
     {

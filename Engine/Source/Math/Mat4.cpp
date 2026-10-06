@@ -3,7 +3,7 @@
 #include <cmath>
 #include <cassert>
 #include <utility>
-namespace qmec
+namespace qmec::math
 {
 
 	

@@ -7,7 +7,7 @@
 #include <limits>
 #include <vector>
 
-namespace qmec
+namespace qmec::assets
 {
     inline constexpr std::uint32_t InvalidMeshIndex = (std::numeric_limits<std::uint32_t>::max)();
 
@@ -37,4 +37,11 @@ namespace qmec
         void RollbackLastMesh(MeshHandle handle) noexcept;
         std::vector<MeshData> meshes_{};
     };
+}
+
+namespace qmec
+{
+    using assets::AssetManager;
+    using assets::MeshHandle;
+    using assets::InvalidMeshIndex;
 }
