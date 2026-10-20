@@ -61,6 +61,8 @@ namespace qmec::editor
         void ScriptRemoveRequested(qmec::ecs::Entity entity, QString typeId);
         void ScriptEntityReferenceEdited(qmec::ecs::Entity owner, QString typeId,
             QString fieldId, qmec::ecs::Entity referencedEntity);
+        void ScriptFloatFieldEdited(qmec::ecs::Entity owner, QString typeId,
+            QString fieldId, float value);
 
     private:
         void RefreshTransformFields() noexcept;

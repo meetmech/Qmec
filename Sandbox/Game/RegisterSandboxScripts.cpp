@@ -19,6 +19,16 @@ namespace qmec::game
                         &VehicleController::rearLeftWheel),
                     MakeEntityReferenceField("rearRightWheel", "Rear Right Wheel",
                         &VehicleController::rearRightWheel)
+                },
+                {
+                    MakeFloatField("suspensionRestLength", "Suspension Rest Length",
+                        &VehicleController::suspensionRestLength, 0.0f, 5.0f, 0.01f),
+                    MakeFloatField("maximumSuspensionTravel", "Maximum Suspension Travel",
+                        &VehicleController::maximumSuspensionTravel, 0.0f, 2.0f, 0.01f),
+                    MakeFloatField("springStiffness", "Spring Stiffness",
+                        &VehicleController::springStiffness, 0.0f, 100000.0f, 100.0f),
+                    MakeFloatField("dampingRatio", "Damping Ratio",
+                        &VehicleController::dampingRatio, 0.0f, 2.0f, 0.05f)
                 });
         (void)registered;
     }

@@ -73,6 +73,8 @@ namespace qmec::editor
         void OnScriptRemoveRequested(qmec::ecs::Entity entity, const QString& typeId);
         void OnScriptEntityReferenceEdited(qmec::ecs::Entity owner, const QString& typeId,
             const QString& fieldId, qmec::ecs::Entity referencedEntity);
+        void OnScriptFloatFieldEdited(qmec::ecs::Entity owner, const QString& typeId,
+            const QString& fieldId, float value);
         void OnTransformEdited(qmec::ecs::Entity entity,
         const qmec::scene::components::TransformComponent& transform);
         void OnDirectionalLightEdited(qmec::ecs::Entity entity,const qmec::scene::components::DirectionalLightComponent& light);

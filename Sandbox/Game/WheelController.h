@@ -32,7 +32,7 @@ namespace qmec::game
         float suspensionRestLength{ 0.35f };
         float maximumSuspensionTravel{ 0.35f };
         float springStiffness{ 18000.0f };
-        float damperCoefficient{ 1800.0f };
+        float dampingRatio{ 0.9f };
 
         float grip{ 1.0f };
         float angularInertia{ 1.0f };
@@ -56,6 +56,11 @@ namespace qmec::game
         void Update(float deltaTime, float vehicleSpeed, const GroundMaterial& ground);
 
     private:
+        Entity anchorWheelEntity_{};
+        Entity anchorChassisEntity_{};
+        Vec3 suspensionAnchorLocal_{};
+        bool suspensionAnchorInitialized_{ false };
+
         void CalculateSlip(float vehicleSpeed);
         void CalculateFrictionLimits(const GroundMaterial& ground);
     };

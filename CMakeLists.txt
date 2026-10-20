@@ -77,6 +77,7 @@ add_library(QMEC STATIC
     Engine/Include/QMEC/Scripting/Script.h
     Engine/Source/Scripting/Script.cpp
     Engine/Source/Platform/Windows/Win32Window.cpp
+    Engine/Source/Platform/Windows/InputSystem.cpp
     Engine/Source/Graphics/Direct3D11/D3D11Renderer.cpp
     Engine/Include/QMEC/Graphics/Debug/DebugLine.h
     Engine/Include/QMEC/Graphics/Debug/DebugRenderer.h
@@ -90,6 +91,7 @@ add_library(QMEC STATIC
     Engine/Source/Assets/AssetManager.cpp
     Engine/Source/ECS/Registry.cpp
     "Engine/Include/QMEC/Input/MouseDelta.h"
+    "Engine/Include/QMEC/Input/InputSystem.h"
     "Engine/Include/QMEC/Assets/ImageData.h"
     Engine/Source/Graphics/Direct3D11/D3D11MeshManager.cpp
     Engine/Source/Assets/AssetSystem.cpp

@@ -42,23 +42,29 @@ namespace qmec::scripting
             std::function<void(Script&, Entity)> set{};
         };
 
+        struct FloatField
+        {
+            std::string id{};
+            std::string displayName{};
+            float minimum{};
+            float maximum{ 1.0f };
+            float step{ 0.1f };
+            std::function<float(const Script&)> get{};
+            std::function<void(Script&, float)> set{};
+        };
+
         std::string id{};
         std::string displayName{};
         std::function<std::shared_ptr<Script>()> create{};
         std::vector<EntityReferenceField> entityReferenceFields{};
+        std::vector<FloatField> floatFields{};
     };
 
     template<typename TScript>
-    [[nodiscard]] ScriptTypeInfo::EntityReferenceField MakeEntityReferenceField(
-        std::string id,
-        std::string displayName,
-        Entity TScript::* member)
+    [[nodiscard]] ScriptTypeInfo::EntityReferenceField MakeEntityReferenceField(std::string id,std::string displayName,Entity TScript::* member)
     {
         static_assert(std::is_base_of_v<Script, TScript>);
-        return {
-            std::move(id),
-            std::move(displayName),
-            [member](const Script& script)
+        return {std::move(id),std::move(displayName),[member](const Script& script)
             {
                 return static_cast<const TScript&>(script).*member;
             },
@@ -68,6 +74,23 @@ namespace qmec::scripting
             }};
     }
 
+    template<typename TScript>
+    [[nodiscard]] ScriptTypeInfo::FloatField MakeFloatField(
+        std::string id, std::string displayName, float TScript::* member,
+        float minimum, float maximum, float step)
+    {
+        static_assert(std::is_base_of_v<Script, TScript>);
+        return { std::move(id), std::move(displayName), minimum, maximum, step,
+            [member](const Script& script)
+            {
+                return static_cast<const TScript&>(script).*member;
+            },
+            [member](Script& script, float value)
+            {
+                static_cast<TScript&>(script).*member = value;
+            } };
+    }
+
     class ScriptTypeRegistry final
     {
     public:
@@ -75,16 +98,18 @@ namespace qmec::scripting
 
         bool Register(std::string id, std::string displayName,
             std::function<std::shared_ptr<Script>()> create,
-            std::vector<ScriptTypeInfo::EntityReferenceField> entityReferenceFields = {});
+            std::vector<ScriptTypeInfo::EntityReferenceField> entityReferenceFields = {},
+            std::vector<ScriptTypeInfo::FloatField> floatFields = {});
 
         template<typename TScript>
         bool Register(std::string id, std::string displayName,
-            std::vector<ScriptTypeInfo::EntityReferenceField> entityReferenceFields = {})
+            std::vector<ScriptTypeInfo::EntityReferenceField> entityReferenceFields = {},
+            std::vector<ScriptTypeInfo::FloatField> floatFields = {})
         {
             static_assert(std::is_base_of_v<Script, TScript>);
             return Register(std::move(id), std::move(displayName),
                 []() { return std::make_shared<TScript>(); },
-                std::move(entityReferenceFields));
+                std::move(entityReferenceFields), std::move(floatFields));
         }
 
         [[nodiscard]] const std::vector<ScriptTypeInfo>& GetTypes() const noexcept;
@@ -114,6 +139,7 @@ namespace qmec
     using scripting::Script;
     using scripting::ScriptTypeInfo;
     using scripting::MakeEntityReferenceField;
+    using scripting::MakeFloatField;
     using scripting::ScriptTypeRegistry;
     using scripting::ScriptInstance;
     using scripting::ScriptComponent;

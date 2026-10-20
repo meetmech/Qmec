@@ -51,6 +51,8 @@ namespace
             return qmec::input::Key::Control;
         case VK_MENU:
             return qmec::input::Key::Alt;
+        case VK_SPACE:
+            return qmec::input::Key::Space;
         case VK_ESCAPE:
             return qmec::input::Key::Escape;
         default:

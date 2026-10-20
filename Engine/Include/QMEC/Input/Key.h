@@ -14,6 +14,7 @@ namespace qmec::input
         Shift,
         Control,
         Alt,
+        Space,
         Escape,
         Count
     };

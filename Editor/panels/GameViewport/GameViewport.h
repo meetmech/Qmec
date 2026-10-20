@@ -4,6 +4,7 @@
 #include <QWidget>
 
 class QResizeEvent;
+class QMouseEvent;
 
 namespace qmec::editor
 {
@@ -18,6 +19,7 @@ namespace qmec::editor
         void Resized(int width, int height);
 
     protected:
+        void mousePressEvent(QMouseEvent* event) override;
         void resizeEvent(QResizeEvent* event) override;
     };
 

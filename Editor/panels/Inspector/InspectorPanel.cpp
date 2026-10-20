@@ -686,6 +686,26 @@ namespace qmec::editor
                     });
                 scriptsLayout_->addWidget(fieldRow);
             }
+
+            for (const qmec::scripting::ScriptTypeInfo::FloatField& field : type->floatFields)
+            {
+                auto* fieldRow = new QWidget(scriptsGroup_);
+                auto* fieldLayout = new QHBoxLayout(fieldRow);
+                fieldLayout->setContentsMargins(12, 0, 0, 0);
+                fieldLayout->addWidget(new QLabel(QString::fromStdString(field.displayName), fieldRow));
+
+                auto* valueField = MakeScalarField(fieldRow, field.minimum, field.maximum, field.step);
+                valueField->setDecimals(3);
+                valueField->setValue(field.get(*instanceIt->object));
+                fieldLayout->addWidget(valueField, 1);
+                connect(valueField, qOverload<double>(&QDoubleSpinBox::valueChanged), this,
+                    [this, typeId, fieldId = field.id](double value)
+                    {
+                        emit ScriptFloatFieldEdited(selectedEntity_, QString::fromStdString(typeId),
+                            QString::fromStdString(fieldId), static_cast<float>(value));
+                    });
+                scriptsLayout_->addWidget(fieldRow);
+            }
         }
     }
 

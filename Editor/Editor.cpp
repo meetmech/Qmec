@@ -17,6 +17,7 @@
 #include "QMEC/Scene/Components/MeshRendererComponent.h"
 #include "QMEC/Scene/SceneSerializer.h"
 #include "QMEC/Scripting/Script.h"
+#include "QMEC/Input/InputSystem.h"
 #include "Game/RegisterSandboxScripts.h"
 
 #include <QAction>
@@ -302,6 +303,8 @@ namespace qmec::editor
             this, &Editor::OnScriptRemoveRequested);
         connect(inspectorPanel_, &InspectorPanel::ScriptEntityReferenceEdited,
             this, &Editor::OnScriptEntityReferenceEdited);
+        connect(inspectorPanel_, &InspectorPanel::ScriptFloatFieldEdited,
+            this, &Editor::OnScriptFloatFieldEdited);
         connect(timer_, &QTimer::timeout, this, &Editor::Tick);
         timer_->start(16);
 
@@ -890,6 +893,43 @@ namespace qmec::editor
         }
     }
 
+    void Editor::OnScriptFloatFieldEdited(qmec::ecs::Entity owner,
+        const QString& typeId, const QString& fieldId, float value)
+    {
+        qmec::ecs::Registry& registry = scene_.GetRegistry();
+        if (!registry.IsAlive(owner))
+            return;
+
+        auto* scripts = registry.GetComponent<qmec::scripting::ScriptComponent>(owner);
+        if (scripts == nullptr)
+            return;
+
+        const std::string scriptTypeId = typeId.toStdString();
+        const std::string propertyId = fieldId.toStdString();
+        const qmec::scripting::ScriptTypeInfo* type =
+            qmec::scripting::ScriptTypeRegistry::Instance().Find(scriptTypeId);
+        if (type == nullptr)
+            return;
+
+        const auto field = std::find_if(type->floatFields.begin(), type->floatFields.end(),
+            [&propertyId](const auto& candidate)
+            {
+                return candidate.id == propertyId;
+            });
+        if (field == type->floatFields.end())
+            return;
+
+        value = (std::clamp)(value, field->minimum, field->maximum);
+        for (qmec::scripting::ScriptInstance& instance : scripts->instances)
+        {
+            if (instance.typeId == scriptTypeId && instance.object != nullptr)
+            {
+                field->set(*instance.object, value);
+                return;
+            }
+        }
+    }
+
     void Editor::OnDirectionalLightEdited(qmec::ecs::Entity entity, const qmec::scene::components::DirectionalLightComponent& light)
     {
         auto* current = scene_.GetRegistry().GetComponent<qmec::scene::components::DirectionalLightComponent>(entity);
@@ -937,6 +977,9 @@ namespace qmec::editor
         }
 
         constexpr float deltaTime = 1.0f / 60.0f;
+        qmec::input::InputSystem::Instance().Update(
+            reinterpret_cast<void*>(winId()),
+            playing_ && gameViewportSurface_ != nullptr && gameViewportSurface_->hasFocus());
         viewport_->UpdateCamera(deltaTime);
         if (playing_)
         {

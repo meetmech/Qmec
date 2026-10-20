@@ -1,5 +1,6 @@
 #include "GameViewport.h"
 
+#include <QMouseEvent>
 #include <QResizeEvent>
 
 namespace qmec::editor
@@ -10,7 +11,13 @@ namespace qmec::editor
         setAttribute(Qt::WA_NativeWindow);
         setAttribute(Qt::WA_NoSystemBackground);
         setAutoFillBackground(false);
-        setFocusPolicy(Qt::NoFocus);
+        setFocusPolicy(Qt::StrongFocus);
+    }
+
+    void GameViewportSurface::mousePressEvent(QMouseEvent* event)
+    {
+        setFocus(Qt::MouseFocusReason);
+        QWidget::mousePressEvent(event);
     }
 
     void GameViewportSurface::resizeEvent(QResizeEvent* event)
