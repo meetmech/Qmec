@@ -14,112 +14,51 @@ namespace qmec::scene
 {
     namespace
     {
-        Mat4 BuildLocalMatrix(const TransformComponent& transform) noexcept
+        struct WorldTransformData
         {
-            Mat4 scale = Mat4::Identity();
-            scale.values[0][0] = transform.scale.x;
-            scale.values[1][1] = transform.scale.y;
-            scale.values[2][2] = transform.scale.z;
-
-            return scale * transform.rotation.Normalized().ToMat4()* Mat4::Translation(transform.position.x,transform.position.y,transform.position.z);
-        }
-
-        bool TryDecomposeLocalMatrix(const Mat4& matrix,TransformComponent& transform) noexcept
-        {
-            constexpr float tolerance = 1.0e-3f;
-            if (std::fabs(matrix.values[0][3]) > tolerance || std::fabs(matrix.values[1][3]) > tolerance ||
-                std::fabs(matrix.values[2][3]) > tolerance ||
-                std::fabs(matrix.values[3][3] - 1.0f) > tolerance)
-            {
-                return false;
-            }
-
-            Vec3 rows[3]
-            {
-                {matrix.values[0][0], matrix.values[0][1], matrix.values[0][2]},
-                {matrix.values[1][0], matrix.values[1][1], matrix.values[1][2]},
-                {matrix.values[2][0], matrix.values[2][1], matrix.values[2][2]}
-            };
-            Vec3 scale{rows[0].Length(), rows[1].Length(), rows[2].Length()};
-            if (!std::isfinite(scale.x) || !std::isfinite(scale.y) ||
-                !std::isfinite(scale.z) || scale.x <= 1.0e-6f ||
-                scale.y <= 1.0e-6f || scale.z <= 1.0e-6f)
-            {
-                return false;
-            }
-
-            const float determinant = Dot(rows[0], Cross(rows[1], rows[2]));
-            if (!std::isfinite(determinant) || std::fabs(determinant) <= 1.0e-6f)
-                return false;
-            if (determinant < 0.0f)
-                scale.x = -scale.x;
-
-            rows[0] = rows[0] * (1.0f / scale.x);
-            rows[1] = rows[1] * (1.0f / scale.y);
-            rows[2] = rows[2] * (1.0f / scale.z);
-
-            if (std::fabs(Dot(rows[0], rows[1])) > tolerance ||std::fabs(Dot(rows[0], rows[2])) > tolerance ||
-                std::fabs(Dot(rows[1], rows[2])) > tolerance)
-            {
-                return false;
-            }
-
-            const float m00 = rows[0].x;
-            const float m01 = rows[1].x;
-            const float m02 = rows[2].x;
-            const float m10 = rows[0].y;
-            const float m11 = rows[1].y;
-            const float m12 = rows[2].y;
-            const float m20 = rows[0].z;
-            const float m21 = rows[1].z;
-            const float m22 = rows[2].z;
-            const float trace = m00 + m11 + m22;
-
+            Vec3 position{};
             Quat rotation{};
-            if (trace > 0.0f)
+            Vec3 scale{1.0f, 1.0f, 1.0f};
+        };
+
+        bool BuildWorldTransform(const Registry& registry,Entity entity,std::size_t remainingDepth,WorldTransformData& result) noexcept
+        {
+            if (!registry.IsAlive(entity) || remainingDepth == 0U)
+                return false;
+
+            const auto* local = registry.GetComponent<TransformComponent>(entity);
+            if (local == nullptr)
+                return false;
+
+            const Entity parent = local->GetParent();
+            if (!parent.IsValid())
             {
-                const float s = std::sqrt(trace + 1.0f) * 2.0f;
-                rotation.w = 0.25f * s;
-                rotation.x = (m21 - m12) / s;
-                rotation.y = (m02 - m20) / s;
-                rotation.z = (m10 - m01) / s;
+                result.position = local->position;
+                result.rotation = local->rotation.Normalized();
+                result.scale = local->scale;
+                return true;
             }
-            else if (m00 > m11 && m00 > m22)
+
+            WorldTransformData parentWorld{};
+            if (!BuildWorldTransform(registry, parent, remainingDepth - 1U, parentWorld))
+                return false;
+
+            const Vec3 scaledLocalPosition{local->position.x * parentWorld.scale.x,local->position.y * parentWorld.scale.y,local->position.z * parentWorld.scale.z};
+            result.position = parentWorld.position + parentWorld.rotation.Rotate(scaledLocalPosition);
+            result.rotation = (parentWorld.rotation * local->rotation).Normalized();
+
+            if (local->inheritParentScale)
             {
-                const float s = std::sqrt(1.0f + m00 - m11 - m22) * 2.0f;
-                rotation.w = (m21 - m12) / s;
-                rotation.x = 0.25f * s;
-                rotation.y = (m01 + m10) / s;
-                rotation.z = (m02 + m20) / s;
-            }
-            else if (m11 > m22)
-            {
-                const float s = std::sqrt(1.0f + m11 - m00 - m22) * 2.0f;
-                rotation.w = (m02 - m20) / s;
-                rotation.x = (m01 + m10) / s;
-                rotation.y = 0.25f * s;
-                rotation.z = (m12 + m21) / s;
+                result.scale = {parentWorld.scale.x * local->scale.x * parentWorld.scale.y * local->scale.y,parentWorld.scale.z * local->scale.z};
             }
             else
             {
-                const float s = std::sqrt(1.0f + m22 - m00 - m11) * 2.0f;
-                rotation.w = (m10 - m01) / s;
-                rotation.x = (m02 + m20) / s;
-                rotation.y = (m12 + m21) / s;
-                rotation.z = 0.25f * s;
+                result.scale = local->scale;
             }
 
-            rotation = rotation.Normalized();
-            if (!std::isfinite(rotation.x) || !std::isfinite(rotation.y) || !std::isfinite(rotation.z) || !std::isfinite(rotation.w))
-            {
-                return false;
-            }
-
-            transform.position = {matrix.values[3][0], matrix.values[3][1], matrix.values[3][2]};
-            transform.rotation = rotation;
-            transform.scale = scale;
             return true;
         }
+
     }
 
     void Scene::runPhysics(float dt)
@@ -139,40 +78,26 @@ namespace qmec::scene
 
     Mat4 Scene::GetWorldMatrix(Entity entity) const noexcept
     {
-        if (!registry_.IsAlive(entity))
-            return Mat4::Identity();
-
-        Mat4 worldMatrix = Mat4::Identity();
-        Entity current = entity;
-        const std::size_t maximumDepth = registry_.GetLivingEntityCount();
-        std::size_t depth = 0U;
-
-        while (current.IsValid() && registry_.IsAlive(current))
+        WorldTransformData worldTransform{};
+        if (!BuildWorldTransform(
+            registry_, entity, registry_.GetLivingEntityCount(), worldTransform))
         {
-            if (depth++ >= maximumDepth)
-            {
-                return Mat4::Identity();
-            }
-
-
-            const auto* transform = registry_.GetComponent<TransformComponent>(current);
-            if (transform == nullptr)
-                break;
-
-            worldMatrix = worldMatrix * BuildLocalMatrix(*transform);
-            current = transform->GetParent();
+            return Mat4::Identity();
         }
 
+        Mat4 scale = Mat4::Identity();
+        scale.values[0][0] = worldTransform.scale.x;
+        scale.values[1][1] = worldTransform.scale.y;
+        scale.values[2][2] = worldTransform.scale.z;
+
+        const Mat4 worldMatrix = scale * worldTransform.rotation.ToMat4()* Mat4::Translation(worldTransform.position.x,worldTransform.position.y,worldTransform.position.z);
         return worldMatrix;
     }
 
     Vec3 Scene::GetWorldPosition(Entity entity) const noexcept
     {
         const Mat4 worldMatrix = GetWorldMatrix(entity);
-        return {
-            worldMatrix.values[3][0],
-            worldMatrix.values[3][1],
-            worldMatrix.values[3][2]};
+        return {worldMatrix.values[3][0],worldMatrix.values[3][1],worldMatrix.values[3][2]};
     }
 
     std::vector<SceneEntityEntry> Scene::GetHierarchyEntities() const
@@ -240,20 +165,35 @@ namespace qmec::scene
 
         if (keepWorldTransform)
         {
-            const Mat4 oldWorldMatrix = GetWorldMatrix(child);
-            const Mat4 parentWorldMatrix = parent.IsValid()
-                ? GetWorldMatrix(parent)
-                : Mat4::Identity();
-            Mat4 inverseParentWorld{};
-            if (!parentWorldMatrix.TryInverse(inverseParentWorld))
+            WorldTransformData oldWorld{};
+            if (!BuildWorldTransform(
+                registry_, child, registry_.GetLivingEntityCount(), oldWorld))
                 return false;
 
-            TransformComponent updatedLocalTransform = *childTransform;
-            if (!TryDecomposeLocalMatrix(
-                oldWorldMatrix * inverseParentWorld,
-                updatedLocalTransform))
+            WorldTransformData parentWorld{};
+            if (parent.IsValid() && !BuildWorldTransform(
+                registry_, parent, registry_.GetLivingEntityCount(), parentWorld))
             {
                 return false;
+            }
+
+            constexpr float scaleTolerance = 1.0e-8f;
+            if (std::fabs(parentWorld.scale.x) <= scaleTolerance ||
+                std::fabs(parentWorld.scale.y) <= scaleTolerance ||
+                std::fabs(parentWorld.scale.z) <= scaleTolerance)
+            {
+                return false;
+            }
+
+            const Quat inverseParentRotation = parentWorld.rotation.Conjugated().Normalized();
+            const Vec3 localPosition = inverseParentRotation.Rotate(oldWorld.position - parentWorld.position);
+            TransformComponent updatedLocalTransform = *childTransform;
+            updatedLocalTransform.position = {localPosition.x / parentWorld.scale.x,localPosition.y / parentWorld.scale.y,localPosition.z / parentWorld.scale.z};
+            updatedLocalTransform.rotation = (inverseParentRotation * oldWorld.rotation).Normalized();
+            updatedLocalTransform.scale = oldWorld.scale;
+            if (updatedLocalTransform.inheritParentScale)
+            {
+                updatedLocalTransform.scale = {oldWorld.scale.x / parentWorld.scale.x,oldWorld.scale.y / parentWorld.scale.y,oldWorld.scale.z / parentWorld.scale.z};
             }
 
             updatedLocalTransform.SetParent(parent);

@@ -12,6 +12,8 @@
 #include "QMEC/Scene/Components/CameraComponent.h"
 #include "QMEC/Scene/Components/ColliderComponent.h"
 #include "QMEC/Scene/Components/DirectionalLightComponent.h"
+#include "QMEC/Scene/Components/NameComponent.h"
+#include "QMEC/Scene/Components/PostProcessComponent.h"
 #include "QMEC/Scene/Components/RigidBodyComponent.h"
 #include "QMEC/Scene/Components/TransformComponent.h"
 #include "QMEC/Scene/Components/MeshRendererComponent.h"
@@ -76,11 +78,7 @@ namespace qmec::editor
             return basis.matrix.TransformDirection(point) + basis.position;
         }
 
-        void DrawSelectedEntityOutline(
-            qmec::graphics::debug::DebugRenderer& debugRenderer,
-            const qmec::scene::Scene& scene,
-            const qmec::assets::AssetSystem& assets,
-            qmec::ecs::Entity entity)
+        void DrawSelectedEntityOutline(qmec::graphics::debug::DebugRenderer& debugRenderer,const qmec::scene::Scene& scene,const qmec::assets::AssetSystem& assets,qmec::ecs::Entity entity)
         {
             constexpr qmec::math::Vec3 selectedColor{ 1.0f, 0.72f, 0.05f };
             constexpr float outlinePadding = 0.01f;
@@ -97,9 +95,7 @@ namespace qmec::editor
                 {
                     qmec::physics::WorldBox worldBox{};
                     worldBox.centre = TransformLocalPoint(basis, box->centre);
-                    worldBox.halfExtents = {
-                        std::abs(box->halfExtents.x) * basis.scale.x + outlinePadding,
-                        std::abs(box->halfExtents.y) * basis.scale.y + outlinePadding,
+                    worldBox.halfExtents = {std::abs(box->halfExtents.x) * basis.scale.x + outlinePadding,std::abs(box->halfExtents.y) * basis.scale.y + outlinePadding,
                         std::abs(box->halfExtents.z) * basis.scale.z + outlinePadding };
                     worldBox.axisX = basis.axisX;
                     worldBox.axisY = basis.axisY;
@@ -110,10 +106,8 @@ namespace qmec::editor
 
                 if (const auto* sphere = std::get_if<qmec::physics::SphereShape>(&collider->shape))
                 {
-                    const float worldRadius = std::abs(sphere->radius) *
-                        (std::max)({ basis.scale.x, basis.scale.y, basis.scale.z });
-                    debugRenderer.DrawSphere(TransformLocalPoint(basis, sphere->centre),
-                        worldRadius + outlinePadding, selectedColor);
+                    const float worldRadius = std::abs(sphere->radius) *(std::max)({ basis.scale.x, basis.scale.y, basis.scale.z });
+                    debugRenderer.DrawSphere(TransformLocalPoint(basis, sphere->centre),worldRadius + outlinePadding, selectedColor);
                     return;
                 }
 
@@ -121,8 +115,7 @@ namespace qmec::editor
                 {
                     qmec::physics::WorldCylinder worldCylinder{};
                     worldCylinder.centre = TransformLocalPoint(basis, cylinder->centre);
-                    worldCylinder.radius = std::abs(cylinder->radius) *
-                        (std::max)(basis.scale.x, basis.scale.z) + outlinePadding;
+                    worldCylinder.radius = std::abs(cylinder->radius) * (std::max)(basis.scale.x, basis.scale.z) + outlinePadding;
                     worldCylinder.halfHeight = std::abs(cylinder->halfHeight) * basis.scale.y + outlinePadding;
                     worldCylinder.axisX = basis.axisX;
                     worldCylinder.axisY = basis.axisY;
@@ -165,10 +158,7 @@ namespace qmec::editor
                 const qmec::math::Vec3 localHalfExtents = (maximum - minimum) * 0.5f;
                 qmec::physics::WorldBox worldBox{};
                 worldBox.centre = TransformLocalPoint(basis, localCentre);
-                worldBox.halfExtents = {
-                    localHalfExtents.x * basis.scale.x + outlinePadding,
-                    localHalfExtents.y * basis.scale.y + outlinePadding,
-                    localHalfExtents.z * basis.scale.z + outlinePadding };
+                worldBox.halfExtents = {localHalfExtents.x * basis.scale.x + outlinePadding,localHalfExtents.y * basis.scale.y + outlinePadding,localHalfExtents.z * basis.scale.z + outlinePadding };
                 worldBox.axisX = basis.axisX;
                 worldBox.axisY = basis.axisY;
                 worldBox.axisZ = basis.axisZ;
@@ -177,12 +167,9 @@ namespace qmec::editor
             }
 
             constexpr float markerHalfLength = 0.18f;
-            debugRenderer.DrawLine(basis.position - basis.axisX * markerHalfLength,
-                basis.position + basis.axisX * markerHalfLength, selectedColor);
-            debugRenderer.DrawLine(basis.position - basis.axisY * markerHalfLength,
-                basis.position + basis.axisY * markerHalfLength, selectedColor);
-            debugRenderer.DrawLine(basis.position - basis.axisZ * markerHalfLength,
-                basis.position + basis.axisZ * markerHalfLength, selectedColor);
+            debugRenderer.DrawLine(basis.position - basis.axisX * markerHalfLength,basis.position + basis.axisX * markerHalfLength, selectedColor);
+            debugRenderer.DrawLine(basis.position - basis.axisY * markerHalfLength,basis.position + basis.axisY * markerHalfLength, selectedColor);
+            debugRenderer.DrawLine(basis.position - basis.axisZ * markerHalfLength,basis.position + basis.axisZ * markerHalfLength, selectedColor);
         }
     }
 
@@ -201,12 +188,9 @@ namespace qmec::editor
 
         QAction* playModeAction = primitiveToolbar->addAction("Play");
         playModeAction->setCheckable(true);
-        connect(playModeAction, &QAction::toggled, this,
-            [this, playModeAction](bool playing)
+        connect(playModeAction, &QAction::toggled, this,[this, playModeAction](bool playing)
             {
-                const bool succeeded = playing
-                    ? StartPlayMode()
-                    : StopPlayMode();
+                const bool succeeded = playing? StartPlayMode(): StopPlayMode();
                 if (!succeeded)
                 {
                     const QSignalBlocker blocker(playModeAction);
@@ -219,15 +203,13 @@ namespace qmec::editor
         saveSceneAction->setShortcut(QKeySequence::Save);
         saveSceneAction->setShortcutContext(Qt::WindowShortcut);
         addAction(saveSceneAction);
-        connect(saveSceneAction, &QAction::triggered, this,
-            [this]() { SaveScene(); });
+        connect(saveSceneAction, &QAction::triggered, this,[this]() { SaveScene(); });
 
         auto* deleteEntityAction = new QAction("Delete Entity", this);
         deleteEntityAction->setShortcut(QKeySequence::Delete);
         deleteEntityAction->setShortcutContext(Qt::WindowShortcut);
         addAction(deleteEntityAction);
-        connect(deleteEntityAction, &QAction::triggered, this,
-            [this]()
+        connect(deleteEntityAction, &QAction::triggered, this,[this]()
             {
                 QWidget* const focusedWidget = QApplication::focusWidget();
                 if (qobject_cast<QAbstractSpinBox*>(focusedWidget) != nullptr ||
@@ -238,13 +220,10 @@ namespace qmec::editor
                 DeleteSelectedEntity();
             });
 
-        const auto addPrimitiveAction = [this, primitiveToolbar](
-            const QString& label,
-            auto createEntity)
+        const auto addPrimitiveAction = [this, primitiveToolbar](const QString& label,auto createEntity)
         {
             QAction* action = primitiveToolbar->addAction(label);
-            connect(action, &QAction::triggered, this,
-                [this, createEntity]()
+            connect(action, &QAction::triggered, this,[this, createEntity]()
                 {
                     if (entityFactory_ == nullptr)
                         return;
@@ -283,8 +262,7 @@ namespace qmec::editor
         resizeDocks({hierarchyPanel_, viewport_, inspectorPanel_}, {1, 2, 1}, Qt::Horizontal);
 
         connect(viewportSurface_, &ViewportSurface::Resized,this, &Editor::OnViewportResized);
-        connect(gameViewportSurface_, &GameViewportSurface::Resized,
-            this, &Editor::OnGameViewportResized);
+        connect(gameViewportSurface_, &GameViewportSurface::Resized,this, &Editor::OnGameViewportResized);
         connect(hierarchyPanel_, &HierarchyPanel::EntitySelected,this, &Editor::OnEntitySelected);
         connect(hierarchyPanel_, &HierarchyPanel::EntityReparentRequested,this, &Editor::OnEntityReparentRequested);
         connect(inspectorPanel_, &InspectorPanel::TransformEdited,this, &Editor::OnTransformEdited);
@@ -292,19 +270,16 @@ namespace qmec::editor
         connect(inspectorPanel_, &InspectorPanel::CameraEdited,this, &Editor::OnCameraEdited);
         connect(inspectorPanel_, &InspectorPanel::ColliderEdited,this, &Editor::OnColliderEdited);
         connect(inspectorPanel_, &InspectorPanel::MaterialEdited, this, &Editor::OnMaterialEdited);
+        connect(inspectorPanel_, &InspectorPanel::PostProcessEdited,this, &Editor::OnPostProcessEdited);
         connect(inspectorPanel_, &InspectorPanel::RigidBodyEdited, this, &Editor::OnRigidBodyEdited);
-        connect(inspectorPanel_, &InspectorPanel::AddComponentRequested,
-            this, &Editor::OnComponentAddRequested);
-        connect(inspectorPanel_, &InspectorPanel::RemoveComponentRequested,
-            this, &Editor::OnComponentRemoveRequested);
-        connect(inspectorPanel_, &InspectorPanel::ScriptAddRequested,
-            this, &Editor::OnScriptAddRequested);
-        connect(inspectorPanel_, &InspectorPanel::ScriptRemoveRequested,
-            this, &Editor::OnScriptRemoveRequested);
-        connect(inspectorPanel_, &InspectorPanel::ScriptEntityReferenceEdited,
-            this, &Editor::OnScriptEntityReferenceEdited);
-        connect(inspectorPanel_, &InspectorPanel::ScriptFloatFieldEdited,
-            this, &Editor::OnScriptFloatFieldEdited);
+        connect(inspectorPanel_, &InspectorPanel::AddComponentRequested,this, &Editor::OnComponentAddRequested);
+        connect(inspectorPanel_, &InspectorPanel::RemoveComponentRequested,this, &Editor::OnComponentRemoveRequested);
+        connect(inspectorPanel_, &InspectorPanel::ScriptAddRequested,this, &Editor::OnScriptAddRequested);
+        connect(inspectorPanel_, &InspectorPanel::ScriptRemoveRequested,this, &Editor::OnScriptRemoveRequested);
+        connect(inspectorPanel_, &InspectorPanel::ScriptEntityReferenceEdited,this, &Editor::OnScriptEntityReferenceEdited);
+        connect(inspectorPanel_, &InspectorPanel::ScriptFloatFieldEdited,this, &Editor::OnScriptFloatFieldEdited);
+        connect(inspectorPanel_, &InspectorPanel::ScriptBoolFieldEdited,this, &Editor::OnScriptBoolFieldEdited);
+        connect(inspectorPanel_, &InspectorPanel::ScriptIntFieldEdited,this, &Editor::OnScriptIntFieldEdited);
         connect(timer_, &QTimer::timeout, this, &Editor::Tick);
         timer_->start(16);
 
@@ -328,8 +303,7 @@ namespace qmec::editor
 
         if (!rendererInitialized_)
         {
-            QMessageBox::information(this, "Play Mode",
-                "The editor is still initializing. Try again in a moment.");
+            QMessageBox::information(this, "Play Mode","The editor is still initializing. Try again in a moment.");
             return false;
         }
 
@@ -337,8 +311,7 @@ namespace qmec::editor
         snapshotFile.setAutoRemove(false);
         if (!snapshotFile.open())
         {
-            QMessageBox::critical(this, "Play Mode",
-                "Could not create a temporary scene snapshot.");
+            QMessageBox::critical(this, "Play Mode", "Could not create a temporary scene snapshot.");
             return false;
         }
 
@@ -347,8 +320,7 @@ namespace qmec::editor
         if (!qmec::scene::SceneSerializer::Save(scene_, snapshotPath.toStdString()))
         {
             QFile::remove(snapshotPath);
-            QMessageBox::critical(this, "Play Mode",
-                "Could not snapshot the current scene. Play mode was not started.");
+            QMessageBox::critical(this, "Play Mode", "Could not snapshot the current scene. Play mode was not started.");
             return false;
         }
 
@@ -399,11 +371,9 @@ namespace qmec::editor
             }
         }
 
-        if (playSnapshotPath_.isEmpty()
-            || !qmec::scene::SceneSerializer::Load(scene_, playSnapshotPath_.toStdString()))
+        if (playSnapshotPath_.isEmpty() || !qmec::scene::SceneSerializer::Load(scene_, playSnapshotPath_.toStdString()))
         {
-            QMessageBox::critical(this, "Play Mode",
-                "Could not restore the pre-play scene. Play mode remains active.");
+            QMessageBox::critical(this, "Play Mode","Could not restore the pre-play scene. Play mode remains active.");
             return false;
         }
 
@@ -426,11 +396,7 @@ namespace qmec::editor
         QString path = sceneFilePath_;
         if (path.isEmpty())
         {
-            path = QFileDialog::getSaveFileName(
-                this,
-                "Save Scene",
-                QDir::current().filePath("Untitled.qmecscene"),
-                "QMEC Scene (*.qmecscene)");
+            path = QFileDialog::getSaveFileName(this,"Save Scene",QDir::current().filePath("Untitled.qmecscene"),"QMEC Scene (*.qmecscene)");
             if (path.isEmpty())
                 return;
 
@@ -447,8 +413,7 @@ namespace qmec::editor
         sceneFilePath_ = path;
         QSettings settings;
         settings.setValue("scene/lastPath", sceneFilePath_);
-        statusBar()->showMessage(
-            "Scene saved: " + QFileInfo(path).fileName(), 3000);
+        statusBar()->showMessage("Scene saved: " + QFileInfo(path).fileName(), 3000);
     }
 
     void Editor::DeleteSelectedEntity()
@@ -535,32 +500,26 @@ namespace qmec::editor
         };
 
         qmec::scene::components::RigidBodyComponent firstCubeBody = dynamicBody(1.0f);
-        const bool firstCubePhysicsAdded = factory.addComponent(firstCube, firstCubeBody)
-            && scene_.GetRegistry().HasComponent<qmec::scene::components::ColliderComponent>(firstCube);
+        const bool firstCubePhysicsAdded = factory.addComponent(firstCube, firstCubeBody)&& scene_.GetRegistry().HasComponent<qmec::scene::components::ColliderComponent>(firstCube);
 
         qmec::scene::components::RigidBodyComponent secondCubeBody = dynamicBody(1.0f);
-        const bool secondCubePhysicsAdded = factory.addComponent(secondCube, secondCubeBody)
-            && scene_.GetRegistry().HasComponent<qmec::scene::components::ColliderComponent>(secondCube);
+        const bool secondCubePhysicsAdded = factory.addComponent(secondCube, secondCubeBody)&& scene_.GetRegistry().HasComponent<qmec::scene::components::ColliderComponent>(secondCube);
 
         qmec::scene::components::RigidBodyComponent movingSphereBody = dynamicBody(1.0f);
         movingSphereBody.velocity = {-2.0f, 0.0f, 0.0f};
-        const bool movingSpherePhysicsAdded = factory.addComponent(movingSphere, movingSphereBody)
-            && scene_.GetRegistry().HasComponent<qmec::scene::components::ColliderComponent>(movingSphere);
+        const bool movingSpherePhysicsAdded = factory.addComponent(movingSphere, movingSphereBody)&& scene_.GetRegistry().HasComponent<qmec::scene::components::ColliderComponent>(movingSphere);
 
         qmec::scene::components::RigidBodyComponent fallingSphereBody = dynamicBody(10.0f);
-        const bool fallingSpherePhysicsAdded = factory.addComponent(fallingSphere, fallingSphereBody)
-            && scene_.GetRegistry().HasComponent<qmec::scene::components::ColliderComponent>(fallingSphere);
+        const bool fallingSpherePhysicsAdded = factory.addComponent(fallingSphere, fallingSphereBody)&& scene_.GetRegistry().HasComponent<qmec::scene::components::ColliderComponent>(fallingSphere);
 
         qmec::scene::components::RigidBodyComponent cylinderBody = dynamicBody(1.0f);
-        const bool cylinderPhysicsAdded = factory.addComponent(cylinder, cylinderBody)
-            && scene_.GetRegistry().HasComponent<qmec::scene::components::ColliderComponent>(cylinder);
+        const bool cylinderPhysicsAdded = factory.addComponent(cylinder, cylinderBody)&& scene_.GetRegistry().HasComponent<qmec::scene::components::ColliderComponent>(cylinder);
 
         qmec::scene::components::RigidBodyComponent groundBody{};
         groundBody.mass = 1.0f;
         groundBody.inverseMass = 0.0f;
         groundBody.isKinematic = true;
-        const bool groundPhysicsAdded = factory.addComponent(ground, groundBody)
-            && scene_.GetRegistry().HasComponent<qmec::scene::components::ColliderComponent>(ground);
+        const bool groundPhysicsAdded = factory.addComponent(ground, groundBody)&& scene_.GetRegistry().HasComponent<qmec::scene::components::ColliderComponent>(ground);
 
         qmec::scene::components::CameraComponent camera{};
         camera.primary = true;
@@ -569,8 +528,7 @@ namespace qmec::editor
         sunlight.intensity = 1.0f;
         qmec::scene::components::TransformComponent lightTransform{};
         lightTransform.rotation = qmec::math::Quat::FromYawPitch(-0.45f, -0.65f);
-        const bool sceneCreated = firstCube.IsValid() && secondCube.IsValid()
-            && movingSphere.IsValid() && fallingSphere.IsValid() && cylinder.IsValid() && ground.IsValid()
+        const bool sceneCreated = firstCube.IsValid() && secondCube.IsValid() && movingSphere.IsValid() && fallingSphere.IsValid() && cylinder.IsValid() && ground.IsValid()
             && firstCubePhysicsAdded && secondCubePhysicsAdded && movingSpherePhysicsAdded
             && fallingSpherePhysicsAdded && cylinderPhysicsAdded && groundPhysicsAdded
             && factory.createCameraEntity(camera, {}, "Game Camera").IsValid()
@@ -593,8 +551,7 @@ namespace qmec::editor
             if (!QFileInfo::exists(savedScenePath))
             {
                 settings.remove("scene/lastPath");
-                QMessageBox::warning(this, "Load Scene",
-                    "The previously saved scene file could not be found. The starter scene was loaded instead.");
+                QMessageBox::warning(this, "Load Scene","The previously saved scene file could not be found. The starter scene was loaded instead.");
             }
             else if (qmec::scene::SceneSerializer::Load(scene_, savedScenePath.toStdString()))
             {
@@ -603,8 +560,33 @@ namespace qmec::editor
             else
             {
                 settings.remove("scene/lastPath");
-                QMessageBox::warning(this, "Load Scene",
-                    "The previously saved scene could not be loaded. The starter scene was loaded instead.");
+                QMessageBox::warning(this, "Load Scene","The previously saved scene could not be loaded. The starter scene was loaded instead.");
+            }
+        }
+
+        qmec::ecs::Registry& registry = scene_.GetRegistry();
+        bool hasPostProcessObject = false;
+        for (const qmec::ecs::Entity entity : registry.GetEntitiesWith<qmec::scene::components::PostProcessComponent>())
+        {
+            if (registry.GetComponent<qmec::scene::components::PostProcessComponent>(entity) != nullptr)
+            {
+                hasPostProcessObject = true;
+                break;
+            }
+        }
+
+        if (!hasPostProcessObject)
+        {
+            const qmec::ecs::Entity postProcessEntity = registry.CreateEntity();
+            const bool postProcessObjectCreated = postProcessEntity.IsValid()
+                && registry.AddComponent(postProcessEntity, qmec::scene::components::NameComponent{"Post Process"})
+                && registry.AddComponent(postProcessEntity, qmec::scene::components::TransformComponent{})
+                && registry.AddComponent(postProcessEntity, qmec::scene::components::PostProcessComponent{});
+            if (!postProcessObjectCreated)
+            {
+                initializing_ = false;
+                QMessageBox::critical(this, "QMEC Editor", "Failed to create the default Post Process object.");
+                return;
             }
         }
 
@@ -630,8 +612,7 @@ namespace qmec::editor
         if (!gameRenderer_.Initialize(nativeWindow, width, height, sharedDevice.Get()))
         {
             gameRendererInitializing_ = false;
-            QMessageBox::warning(this, "QMEC Editor",
-                "Failed to initialize Direct3D 11 for the Game viewport.");
+            QMessageBox::warning(this, "QMEC Editor", "Failed to initialize Direct3D 11 for the Game viewport.");
             return;
         }
 
@@ -696,7 +677,8 @@ namespace qmec::editor
             registry.GetComponent<qmec::scene::components::RigidBodyComponent>(entity),
             registry.GetComponent<qmec::scene::components::ColliderComponent>(entity),
             registry.GetComponent<qmec::scene::components::MaterialComponent>(entity),
-            registry.GetComponent<qmec::scripting::ScriptComponent>(entity));
+            registry.GetComponent<qmec::scripting::ScriptComponent>(entity),
+            registry.GetComponent<qmec::scene::components::PostProcessComponent>(entity));
     }
 
     void Editor::OnEntityReparentRequested(qmec::ecs::Entity child, qmec::ecs::Entity parent)
@@ -704,9 +686,7 @@ namespace qmec::editor
         scene_.SetParent(child, parent);
     }
 
-    void Editor::OnComponentAddRequested(
-        qmec::ecs::Entity entity,
-        InspectorComponentType componentType)
+    void Editor::OnComponentAddRequested(qmec::ecs::Entity entity,InspectorComponentType componentType)
     {
         qmec::ecs::Registry& registry = scene_.GetRegistry();
         if (!registry.IsAlive(entity))
@@ -752,9 +732,7 @@ namespace qmec::editor
             OnEntitySelected(entity);
     }
 
-    void Editor::OnComponentRemoveRequested(
-        qmec::ecs::Entity entity,
-        InspectorComponentType componentType)
+    void Editor::OnComponentRemoveRequested(qmec::ecs::Entity entity,InspectorComponentType componentType)
     {
         qmec::ecs::Registry& registry = scene_.GetRegistry();
         if (!registry.IsAlive(entity))
@@ -792,8 +770,7 @@ namespace qmec::editor
             return;
         }
 
-        std::shared_ptr<qmec::scripting::Script> script =
-            qmec::scripting::ScriptTypeRegistry::Instance().Create(typeId.toStdString());
+        std::shared_ptr<qmec::scripting::Script> script = qmec::scripting::ScriptTypeRegistry::Instance().Create(typeId.toStdString());
         if (script == nullptr)
         {
             return;
@@ -853,9 +830,7 @@ namespace qmec::editor
         OnEntitySelected(entity);
     }
 
-    void Editor::OnScriptEntityReferenceEdited(qmec::ecs::Entity owner,
-        const QString& typeId, const QString& fieldId,
-        qmec::ecs::Entity referencedEntity)
+    void Editor::OnScriptEntityReferenceEdited(qmec::ecs::Entity owner,const QString& typeId, const QString& fieldId,qmec::ecs::Entity referencedEntity)
     {
         qmec::ecs::Registry& registry = scene_.GetRegistry();
         if (!registry.IsAlive(owner))
@@ -893,8 +868,7 @@ namespace qmec::editor
         }
     }
 
-    void Editor::OnScriptFloatFieldEdited(qmec::ecs::Entity owner,
-        const QString& typeId, const QString& fieldId, float value)
+    void Editor::OnScriptFloatFieldEdited(qmec::ecs::Entity owner,const QString& typeId, const QString& fieldId, float value)
     {
         qmec::ecs::Registry& registry = scene_.GetRegistry();
         if (!registry.IsAlive(owner))
@@ -906,8 +880,7 @@ namespace qmec::editor
 
         const std::string scriptTypeId = typeId.toStdString();
         const std::string propertyId = fieldId.toStdString();
-        const qmec::scripting::ScriptTypeInfo* type =
-            qmec::scripting::ScriptTypeRegistry::Instance().Find(scriptTypeId);
+        const qmec::scripting::ScriptTypeInfo* type = qmec::scripting::ScriptTypeRegistry::Instance().Find(scriptTypeId);
         if (type == nullptr)
             return;
 
@@ -923,6 +896,53 @@ namespace qmec::editor
         for (qmec::scripting::ScriptInstance& instance : scripts->instances)
         {
             if (instance.typeId == scriptTypeId && instance.object != nullptr)
+            {
+                field->set(*instance.object, value);
+                return;
+            }
+        }
+    }
+
+    void Editor::OnScriptBoolFieldEdited(qmec::ecs::Entity owner,const QString& typeId, const QString& fieldId, bool value)
+    {
+        qmec::ecs::Registry& registry = scene_.GetRegistry();
+        if (!registry.IsAlive(owner))
+            return;
+        auto* scripts = registry.GetComponent<qmec::scripting::ScriptComponent>(owner);
+        const auto* type = qmec::scripting::ScriptTypeRegistry::Instance().Find(typeId.toStdString());
+        if (scripts == nullptr || type == nullptr)
+            return;
+        const std::string propertyId = fieldId.toStdString();
+        const auto field = std::find_if(type->boolFields.begin(), type->boolFields.end(),[&propertyId](const auto& candidate) { return candidate.id == propertyId; });
+        if (field == type->boolFields.end())
+            return;
+        for (auto& instance : scripts->instances)
+        {
+            if (instance.typeId == type->id && instance.object != nullptr)
+            {
+                field->set(*instance.object, value);
+                return;
+            }
+        }
+    }
+
+    void Editor::OnScriptIntFieldEdited(qmec::ecs::Entity owner,const QString& typeId, const QString& fieldId, int value)
+    {
+        qmec::ecs::Registry& registry = scene_.GetRegistry();
+        if (!registry.IsAlive(owner))
+            return;
+        auto* scripts = registry.GetComponent<qmec::scripting::ScriptComponent>(owner);
+        const auto* type = qmec::scripting::ScriptTypeRegistry::Instance().Find(typeId.toStdString());
+        if (scripts == nullptr || type == nullptr)
+            return;
+        const std::string propertyId = fieldId.toStdString();
+        const auto field = std::find_if(type->intFields.begin(), type->intFields.end(),[&propertyId](const auto& candidate) { return candidate.id == propertyId; });
+        if (field == type->intFields.end())
+            return;
+        value = (std::clamp)(value, field->minimum, field->maximum);
+        for (auto& instance : scripts->instances)
+        {
+            if (instance.typeId == type->id && instance.object != nullptr)
             {
                 field->set(*instance.object, value);
                 return;
@@ -960,6 +980,13 @@ namespace qmec::editor
         if (current != nullptr) *current = material;
     }
 
+    void Editor::OnPostProcessEdited(qmec::ecs::Entity entity,const qmec::scene::components::PostProcessComponent& postProcess)
+    {
+        auto* current = scene_.GetRegistry().GetComponent<qmec::scene::components::PostProcessComponent>(entity);
+        if (current != nullptr)
+            *current = postProcess;
+    }
+
     void Editor::OnTransformEdited(qmec::ecs::Entity entity, const qmec::scene::components::TransformComponent& transform)
     {
         auto* currentTransform = scene_.GetRegistry().GetComponent<qmec::scene::components::TransformComponent>(entity);
@@ -977,9 +1004,7 @@ namespace qmec::editor
         }
 
         constexpr float deltaTime = 1.0f / 60.0f;
-        qmec::input::InputSystem::Instance().Update(
-            reinterpret_cast<void*>(winId()),
-            playing_ && gameViewportSurface_ != nullptr && gameViewportSurface_->hasFocus());
+        qmec::input::InputSystem::Instance().Update(reinterpret_cast<void*>(winId()),playing_ && gameViewportSurface_ != nullptr && gameViewportSurface_->hasFocus());
         viewport_->UpdateCamera(deltaTime);
         if (playing_)
         {
@@ -1020,9 +1045,7 @@ namespace qmec::editor
             DrawSelectedEntityOutline(debugRenderer_, scene_, *assetSystem_, selectedEntity_);
         }
 
-        const bool editorFrameRendered = renderer_.RenderFrame(
-            0.05F, 0.10F, 0.20F, 1.0F, scene_, *assetSystem_,
-            viewport_->EditorCamera(), debugRenderer_.GetLines());
+        const bool editorFrameRendered = renderer_.RenderFrame(0.05F, 0.10F, 0.20F, 1.0F, scene_, *assetSystem_,viewport_->EditorCamera(), debugRenderer_.GetLines());
         if (!editorFrameRendered)
         {
             timer_->stop();
@@ -1030,7 +1053,7 @@ namespace qmec::editor
             return;
         }
 
-        if (gameRendererInitialized_)
+        if (gameRendererInitialized_ && gameViewportSurface_ != nullptr && gameViewportSurface_->isVisible())
         {
             qmec::ecs::Entity primaryCamera{};
             const qmec::ecs::Registry& registry = scene_.GetRegistry();

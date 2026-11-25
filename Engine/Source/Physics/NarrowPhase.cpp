@@ -21,6 +21,14 @@
 
 namespace qmec::physics
 {
+    namespace
+    {
+        TransformComponent* GetBodyTransform(const NarrowPhaseCollider& collider) noexcept
+        {
+            return collider.bodyTransform != nullptr ? collider.bodyTransform : collider.transform;
+        }
+    }
+
     static std::vector<Vec3> sutherlandHodgmanClip(const std::vector<Vec3>& clipPolygon,const clipPlane& plane)
     {
         std::vector<Vec3> clippedPoints;
@@ -104,9 +112,9 @@ namespace qmec::physics
         }
 
         ContactManifold manifold{};
-        manifold.bodyOne.transform = colliderA.transform;
+        manifold.bodyOne.transform = GetBodyTransform(colliderA);
         manifold.bodyOne.rigidBody = colliderA.rigidbody;
-        manifold.bodyTwo.transform = colliderB.transform;
+        manifold.bodyTwo.transform = GetBodyTransform(colliderB);
         manifold.bodyTwo.rigidBody = colliderB.rigidbody;
         manifold.normal = convexContact.normal;
 
@@ -393,9 +401,9 @@ namespace qmec::physics
 
         manifold.normal = -planeNormal;
         manifold.bodyOne.rigidBody = boxCollider.rigidbody;
-        manifold.bodyOne.transform = boxCollider.transform;
+        manifold.bodyOne.transform = GetBodyTransform(boxCollider);
         manifold.bodyTwo.rigidBody = planeCollider.rigidbody;
-        manifold.bodyTwo.transform = planeCollider.transform;
+        manifold.bodyTwo.transform = GetBodyTransform(planeCollider);
 
         for (const Vec3& point : clipped)
         {
@@ -440,9 +448,9 @@ namespace qmec::physics
         manifold.contacts.push_back(ContactPoint{sphere.radius - distance, closestPoint});
 
         manifold.bodyOne.rigidBody = sphereCollider.rigidbody;
-        manifold.bodyOne.transform = sphereCollider.transform;
+        manifold.bodyOne.transform = GetBodyTransform(sphereCollider);
         manifold.bodyTwo.rigidBody = planeCollider.rigidbody;
-        manifold.bodyTwo.transform = planeCollider.transform;
+        manifold.bodyTwo.transform = GetBodyTransform(planeCollider);
 
         outManifold = std::move(manifold);
         return true;
@@ -482,9 +490,9 @@ namespace qmec::physics
             manifold.normal = contactNormal;
             
             manifold.bodyOne.rigidBody = sphereCollider.rigidbody;
-            manifold.bodyOne.transform = sphereCollider.transform;
+            manifold.bodyOne.transform = GetBodyTransform(sphereCollider);
             manifold.bodyTwo.rigidBody = sphereColliderTwo.rigidbody;
-            manifold.bodyTwo.transform = sphereColliderTwo.transform;
+            manifold.bodyTwo.transform = GetBodyTransform(sphereColliderTwo);
 
 
             manifoldOut = manifold;
@@ -541,8 +549,8 @@ namespace qmec::physics
 
             const RigidBodyComponent* sphereBody = sphereCollider.rigidbody;
             const RigidBodyComponent* boxBody = boxCollider.rigidbody;
-            const Vec3 sphereVelocity = sphereBody ? sphereBody->velocity + Cross(sphereBody->angularVelocity, sphere.centre - sphereCollider.transform->position) : Vec3{};
-            const Vec3 boxVelocity = boxBody ? boxBody->velocity + Cross(boxBody->angularVelocity, sphere.centre - boxCollider.transform->position) : Vec3{};
+            const Vec3 sphereVelocity = sphereBody ? sphereBody->velocity + Cross(sphereBody->angularVelocity, sphere.centre - GetBodyTransform(sphereCollider)->position) : Vec3{};
+            const Vec3 boxVelocity = boxBody ? boxBody->velocity + Cross(boxBody->angularVelocity, sphere.centre - GetBodyTransform(boxCollider)->position) : Vec3{};
             const Vec3 relativeVelocity = sphereVelocity - boxVelocity;
             const Vec3 localRelativeVelocity{ Dot(box.axisX, relativeVelocity),Dot(box.axisY, relativeVelocity),Dot(box.axisZ, relativeVelocity)
             };
@@ -595,14 +603,14 @@ namespace qmec::physics
 
         manifold.contacts.push_back(contactPoint);
         manifold.bodyOne.rigidBody = sphereCollider.rigidbody;
-        manifold.bodyOne.transform = sphereCollider.transform;
+        manifold.bodyOne.transform = GetBodyTransform(sphereCollider);
         manifold.bodyTwo.rigidBody = boxCollider.rigidbody;
-        manifold.bodyTwo.transform = boxCollider.transform;
+        manifold.bodyTwo.transform = GetBodyTransform(boxCollider);
 
         const RigidBodyComponent* sphereBody = sphereCollider.rigidbody;
         const RigidBodyComponent* boxBody = boxCollider.rigidbody;
-        const Vec3 sphereContactVelocity = sphereBody ? sphereBody->velocity + Cross(sphereBody->angularVelocity,contactPoint.position - sphereCollider.transform->position): Vec3{};
-        const Vec3 boxContactVelocity = boxBody ? boxBody->velocity + Cross(boxBody->angularVelocity, contactPoint.position - boxCollider.transform->position): Vec3{};
+        const Vec3 sphereContactVelocity = sphereBody ? sphereBody->velocity + Cross(sphereBody->angularVelocity,contactPoint.position - GetBodyTransform(sphereCollider)->position): Vec3{};
+        const Vec3 boxContactVelocity = boxBody ? boxBody->velocity + Cross(boxBody->angularVelocity, contactPoint.position - GetBodyTransform(boxCollider)->position): Vec3{};
         const float normalVelocity = Dot(boxContactVelocity - sphereContactVelocity, manifold.normal);
 
         
@@ -670,8 +678,8 @@ namespace qmec::physics
         manifold.normal = cylinder.axisX * localNormal.x + cylinder.axisY * localNormal.y + cylinder.axisZ * localNormal.z;
         const Vec3 contactPoint = cylinder.centre + cylinder.axisX * closest.x  + cylinder.axisY * closest.y + cylinder.axisZ * closest.z;
         manifold.contacts.push_back(ContactPoint{penetration, contactPoint});
-        manifold.bodyOne = {cylinderCollider.transform, cylinderCollider.rigidbody};
-        manifold.bodyTwo = {sphereCollider.transform, sphereCollider.rigidbody};
+        manifold.bodyOne = {GetBodyTransform(cylinderCollider), cylinderCollider.rigidbody};
+        manifold.bodyTwo = {GetBodyTransform(sphereCollider), sphereCollider.rigidbody};
         manifoldOut = std::move(manifold);
         return true;
     }
@@ -758,8 +766,8 @@ namespace qmec::physics
         ContactManifold manifold{};
         manifold.normal = towardPlane;
         manifold.contacts.push_back(ContactPoint{extent - std::abs(distance), planePoint});
-        manifold.bodyOne = {cylinderCollider.transform, cylinderCollider.rigidbody};
-        manifold.bodyTwo = {planeCollider.transform, planeCollider.rigidbody};
+        manifold.bodyOne = {GetBodyTransform(cylinderCollider), cylinderCollider.rigidbody};
+        manifold.bodyTwo = {GetBodyTransform(planeCollider), planeCollider.rigidbody};
         manifoldOut = std::move(manifold);
         return true;
     }
@@ -963,9 +971,9 @@ namespace qmec::physics
             manifold.normal = BestAxis;
             manifold.contacts.push_back(ContactPoint{bestDistance, (pointA + pointB) * 0.5f});
             manifold.bodyOne.rigidBody = boxColliderOne.rigidbody;
-            manifold.bodyOne.transform = boxColliderOne.transform;
+            manifold.bodyOne.transform = GetBodyTransform(boxColliderOne);
             manifold.bodyTwo.rigidBody = boxColliderTwo.rigidbody;
-            manifold.bodyTwo.transform = boxColliderTwo.transform;
+            manifold.bodyTwo.transform = GetBodyTransform(boxColliderTwo);
             manifoldOut = std::move(manifold);
             return true;
         }
@@ -1252,9 +1260,9 @@ namespace qmec::physics
 
 
         manifold.bodyOne.rigidBody = boxColliderOne.rigidbody;
-        manifold.bodyOne.transform = boxColliderOne.transform;
+        manifold.bodyOne.transform = GetBodyTransform(boxColliderOne);
         manifold.bodyTwo.rigidBody = boxColliderTwo.rigidbody;
-        manifold.bodyTwo.transform = boxColliderTwo.transform;
+        manifold.bodyTwo.transform = GetBodyTransform(boxColliderTwo);
 
         manifoldOut = manifold;
 

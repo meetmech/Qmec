@@ -13,8 +13,7 @@ namespace qmec::physics {
     class PhysicsWorld
     {
     public:
-        PhysicsWorld(Registry& registry, float deltaTime = 1.0f / 60.0f, Vec3 gravity = {0,-9.8f,0})
-            : fixedDeltaTime(deltaTime), gravity_(gravity), registry_(registry)
+        PhysicsWorld(Registry& registry, float deltaTime = 1.0f / 60.0f, Vec3 gravity = {0,-9.8f,0}) : fixedDeltaTime(deltaTime), gravity_(gravity), registry_(registry)
         {
 
         }

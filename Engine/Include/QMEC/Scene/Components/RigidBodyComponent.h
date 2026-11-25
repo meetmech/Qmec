@@ -31,7 +31,6 @@ namespace qmec::scene::components
 
         PhysicsMaterial material{};
 
-        // Forces accumulate until the next PhysicsWorld fixed step.
         void ApplyForce(const Vec3& force) noexcept
         {
             if (!isKinematic)
@@ -44,8 +43,6 @@ namespace qmec::scene::components
                 accumulatedTorque += torque;
         }
 
-        // leverArm is a world-space vector from the body's center of mass to
-        // the point where this world-space force is applied.
         void ApplyForceAtPoint(const Vec3& force, const Vec3& leverArm) noexcept
         {
             ApplyForce(force);
@@ -62,6 +59,8 @@ namespace qmec::scene::components
         {
             velocity += impulse * inverseMass;
         }
+        
+        RigidBodyComponent& operator=(const RigidBodyComponent&) noexcept = default;
 
         void ApplyAngularImpulse(const Vec3& angularImpulse) noexcept
         {

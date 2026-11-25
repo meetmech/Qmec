@@ -7,6 +7,7 @@
 #include "QMEC/Scene/Components/CameraComponent.h"
 #include "QMEC/Scene/Components/DirectionalLightComponent.h"
 #include "QMEC/Scene/Components/MaterialComponent.h"
+#include "QMEC/Scene/Components/PostProcessComponent.h"
 #include "QMEC/Scripting/Script.h"
 #include <QDockWidget>
 #include <array>
@@ -46,7 +47,8 @@ namespace qmec::editor
             const qmec::scene::components::RigidBodyComponent* rigidbody,
             const qmec::scene::components::ColliderComponent* collider,
             const qmec::scene::components::MaterialComponent* material,
-            const qmec::scripting::ScriptComponent* scripts);
+            const qmec::scripting::ScriptComponent* scripts,
+            const qmec::scene::components::PostProcessComponent* postProcess);
 
     signals:
         void TransformEdited(qmec::ecs::Entity entity, qmec::scene::components::TransformComponent transform);
@@ -55,6 +57,7 @@ namespace qmec::editor
         void DirectionalLightEdited(qmec::ecs::Entity entity, qmec::scene::components::DirectionalLightComponent light);
         void CameraEdited(qmec::ecs::Entity entity, qmec::scene::components::CameraComponent camera);
         void MaterialEdited(qmec::ecs::Entity entity, qmec::scene::components::MaterialComponent material);
+        void PostProcessEdited(qmec::ecs::Entity entity, qmec::scene::components::PostProcessComponent postProcess);
         void AddComponentRequested(qmec::ecs::Entity entity, InspectorComponentType componentType);
         void RemoveComponentRequested(qmec::ecs::Entity entity, InspectorComponentType componentType);
         void ScriptAddRequested(qmec::ecs::Entity entity, QString typeId);
@@ -63,6 +66,10 @@ namespace qmec::editor
             QString fieldId, qmec::ecs::Entity referencedEntity);
         void ScriptFloatFieldEdited(qmec::ecs::Entity owner, QString typeId,
             QString fieldId, float value);
+        void ScriptBoolFieldEdited(qmec::ecs::Entity owner, QString typeId,
+            QString fieldId, bool value);
+        void ScriptIntFieldEdited(qmec::ecs::Entity owner, QString typeId,
+            QString fieldId, int value);
 
     private:
         void RefreshTransformFields() noexcept;
@@ -75,6 +82,8 @@ namespace qmec::editor
         void CommitCameraEdit() noexcept;
         void RefreshMaterialFields() noexcept;
         void CommitMaterialEdit() noexcept;
+        void RefreshPostProcessFields() noexcept;
+        void CommitPostProcessEdit() noexcept;
         void OnChooseAlbedoTexture();
         void OnChooseNormalTexture();
         void RefreshColliderFields() noexcept;
@@ -91,9 +100,11 @@ namespace qmec::editor
         qmec::scene::components::DirectionalLightComponent displayedLight{};
         qmec::scene::components::CameraComponent displayedCamera{};
         qmec::scene::components::MaterialComponent displayedMaterial{};
+        qmec::scene::components::PostProcessComponent displayedPostProcess_{};
         std::array<QDoubleSpinBox*, 3> positionFields_{};
         std::array<QDoubleSpinBox*, 3> rotationFields_{};
         std::array<QDoubleSpinBox*, 3> scaleFields_{};
+        QCheckBox* inheritParentScaleField_{nullptr};
         std::array<QDoubleSpinBox*, 3> lightColorFields_{};
         std::array<QDoubleSpinBox*, 3> colliderCenterFields_{};
         std::array<QDoubleSpinBox*, 3> boxHalfExtentsFields_{};
@@ -120,6 +131,10 @@ namespace qmec::editor
         QDoubleSpinBox* metallicField_{nullptr};
         QDoubleSpinBox* roughnessField_{nullptr};
         QDoubleSpinBox* specularLevelField_{nullptr};
+        QDoubleSpinBox* postProcessBrightnessField_{nullptr};
+        QDoubleSpinBox* postProcessContrastField_{nullptr};
+        QDoubleSpinBox* postProcessSaturationField_{nullptr};
+        QDoubleSpinBox* postProcessHueShiftField_{nullptr};
         QLineEdit* albedoTexturePathField_{nullptr};
         QPushButton* albedoTextureButton_{nullptr};
         QLineEdit* normalTexturePathField_{nullptr};
@@ -141,6 +156,8 @@ namespace qmec::editor
         QGroupBox* rigidBodyGroup_{ nullptr };
         QGroupBox* colliderGroup_{nullptr};
         QGroupBox* materialGroup_{nullptr};
+        QGroupBox* postProcessGroup_{nullptr};
+        QCheckBox* postProcessEnabledField_{nullptr};
         QGroupBox* scriptsGroup_{nullptr};
         QVBoxLayout* scriptsLayout_{nullptr};
         QGroupBox* boxShapeGroup_{nullptr};
@@ -163,6 +180,7 @@ namespace qmec::editor
         bool hasCamera_{false};
         bool hasCollider_{false};
         bool hasMaterial_{false};
+        bool hasPostProcess_{false};
         bool updatingUi_{false};
     };
 

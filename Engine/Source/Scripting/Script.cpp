@@ -14,7 +14,9 @@ namespace qmec::scripting
     bool ScriptTypeRegistry::Register(std::string id, std::string displayName,
         std::function<std::shared_ptr<Script>()> create,
         std::vector<ScriptTypeInfo::EntityReferenceField> entityReferenceFields,
-        std::vector<ScriptTypeInfo::FloatField> floatFields)
+        std::vector<ScriptTypeInfo::FloatField> floatFields,
+        std::vector<ScriptTypeInfo::BoolField> boolFields,
+        std::vector<ScriptTypeInfo::IntField> intFields)
     {
         if (id.empty() || displayName.empty() || !create || Find(id) != nullptr)
         {
@@ -22,7 +24,8 @@ namespace qmec::scripting
         }
 
         types_.push_back({std::move(id), std::move(displayName), std::move(create),
-            std::move(entityReferenceFields), std::move(floatFields)});
+            std::move(entityReferenceFields), std::move(floatFields),
+            std::move(boolFields), std::move(intFields)});
         return true;
     }
 

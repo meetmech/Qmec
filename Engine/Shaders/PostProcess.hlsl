@@ -9,10 +9,12 @@ struct VertexOutput
 
 cbuffer PostProcessBuffer : register(b2)
 {
+    float enabled;
     float brightness;
     float contrast;
     float saturation;
     float hueShift;
+    float3 padding;
 };
 
 VertexOutput VertexMain(uint vertexId : SV_VertexID)
@@ -74,6 +76,11 @@ float3 ApplyHue(float3 color, float hueShift)
 float4 PixelMain(VertexOutput input) : SV_TARGET
 {
     float4 BaseColor = sceneTexture.Sample(sceneSampler,input.uv);
+
+    if (enabled < 0.5f)
+    {
+        return BaseColor;
+    }
 
     // Brightness
     BaseColor *= brightness;

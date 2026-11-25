@@ -7,6 +7,7 @@
 #include "QMEC/Scene/Components/MaterialComponent.h"
 #include "QMEC/Scene/Components/MeshRendererComponent.h"
 #include "QMEC/Scene/Components/NameComponent.h"
+#include "QMEC/Scene/Components/PostProcessComponent.h"
 #include "QMEC/Scene/Components/RigidBodyComponent.h"
 #include "QMEC/Scene/Components/TransformComponent.h"
 #include "QMEC/Scripting/Script.h"
@@ -51,6 +52,7 @@ namespace qmec::scene
             std::optional<MaterialComponent> material{};
             std::optional<CameraComponent> camera{};
             std::optional<DirectionalLightComponent> directionalLight{};
+            std::optional<PostProcessComponent> postProcess{};
             std::optional<RigidBodyComponent> rigidBody{};
             std::optional<ColliderComponent> collider{};
             std::optional<ScriptComponent> scripts{};
@@ -205,6 +207,8 @@ namespace qmec::scene
                 transform.position = ReadVec3(data.at("position"));
                 transform.rotation = ReadQuat(data.at("rotation"));
                 transform.scale = ReadVec3(data.at("scale"));
+                if (data.contains("inheritParentScale"))
+                    transform.inheritParentScale = data.at("inheritParentScale").get<bool>();
                 result.transform = transform;
             }
 
@@ -256,6 +260,18 @@ namespace qmec::scene
                 result.directionalLight = component;
             }
 
+            if (components.contains("postProcess"))
+            {
+                const json& data = components.at("postProcess");
+                PostProcessComponent component{};
+                component.enabled = data.at("enabled").get<bool>();
+                component.brightness = std::clamp(ReadFloat(data.at("brightness")), 0.0f, 10.0f);
+                component.contrast = std::clamp(ReadFloat(data.at("contrast")), -1.0f, 1.0f);
+                component.saturation = std::clamp(ReadFloat(data.at("saturation")), 0.0f, 2.0f);
+                component.hueShift = std::clamp(ReadFloat(data.at("hueShift")), -1.0f, 1.0f);
+                result.postProcess = component;
+            }
+
             if (components.contains("rigidBody"))
             {
                 const json& data = components.at("rigidBody");
@@ -303,6 +319,9 @@ namespace qmec::scene
                 {
                     std::string typeId{};
                     const json* references = nullptr;
+                    const json* floatFields = nullptr;
+                    const json* boolFields = nullptr;
+                    const json* intFields = nullptr;
                     if (scriptValue.is_string())
                     {
                         // Version 1 stored only the script type ID.
@@ -313,6 +332,12 @@ namespace qmec::scene
                         typeId = scriptValue.at("typeId").get<std::string>();
                         if (scriptValue.contains("entityReferences"))
                             references = &scriptValue.at("entityReferences");
+                        if (scriptValue.contains("floatFields"))
+                            floatFields = &scriptValue.at("floatFields");
+                        if (scriptValue.contains("boolFields"))
+                            boolFields = &scriptValue.at("boolFields");
+                        if (scriptValue.contains("intFields"))
+                            intFields = &scriptValue.at("intFields");
                     }
                     else
                     {
@@ -326,6 +351,64 @@ namespace qmec::scene
 
                     const std::size_t scriptIndex = component.instances.size();
                     component.instances.push_back({typeId, std::move(script)});
+
+                    if (floatFields != nullptr)
+                    {
+                        if (!floatFields->is_object())
+                            throw json::type_error::create(302,
+                                "script float fields must be an object", floatFields);
+
+                        const ScriptTypeInfo* type = ScriptTypeRegistry::Instance().Find(typeId);
+                        if (type != nullptr)
+                        {
+                            Script& loadedScript = *component.instances.back().object;
+                            for (const ScriptTypeInfo::FloatField& field : type->floatFields)
+                            {
+                                if (!floatFields->contains(field.id))
+                                    continue;
+                                const float fieldValue = (std::clamp)(ReadFloat(floatFields->at(field.id)),
+                                    field.minimum, field.maximum);
+                                field.set(loadedScript, fieldValue);
+                            }
+                        }
+                    }
+
+                    if (boolFields != nullptr)
+                    {
+                        if (!boolFields->is_object())
+                            throw json::type_error::create(302,
+                                "script bool fields must be an object", boolFields);
+                        const ScriptTypeInfo* type = ScriptTypeRegistry::Instance().Find(typeId);
+                        if (type != nullptr)
+                        {
+                            Script& loadedScript = *component.instances.back().object;
+                            for (const ScriptTypeInfo::BoolField& field : type->boolFields)
+                            {
+                                if (boolFields->contains(field.id))
+                                    field.set(loadedScript, boolFields->at(field.id).get<bool>());
+                            }
+                        }
+                    }
+
+                    if (intFields != nullptr)
+                    {
+                        if (!intFields->is_object())
+                            throw json::type_error::create(302,
+                                "script integer fields must be an object", intFields);
+                        const ScriptTypeInfo* type = ScriptTypeRegistry::Instance().Find(typeId);
+                        if (type != nullptr)
+                        {
+                            Script& loadedScript = *component.instances.back().object;
+                            for (const ScriptTypeInfo::IntField& field : type->intFields)
+                            {
+                                if (!intFields->contains(field.id))
+                                    continue;
+                                const int fieldValue = (std::clamp)(
+                                    intFields->at(field.id).get<int>(), field.minimum, field.maximum);
+                                field.set(loadedScript, fieldValue);
+                            }
+                        }
+                    }
 
                     if (references != nullptr)
                     {
@@ -415,7 +498,8 @@ namespace qmec::scene
                     components["transform"] = {
                         {"position", ToJson(transform->position)},
                         {"rotation", ToJson(transform->rotation)},
-                        {"scale", ToJson(transform->scale)}};
+                        {"scale", ToJson(transform->scale)},
+                        {"inheritParentScale", transform->inheritParentScale}};
 
                     if (transform->HasParent())
                     {
@@ -463,6 +547,16 @@ namespace qmec::scene
                         {"enabled", light->enabled}};
                 }
 
+                if (const auto* postProcess = registry.GetComponent<PostProcessComponent>(entity))
+                {
+                    components["postProcess"] = {
+                        {"enabled", postProcess->enabled},
+                        {"brightness", std::clamp(postProcess->brightness, 0.0f, 10.0f)},
+                        {"contrast", std::clamp(postProcess->contrast, -1.0f, 1.0f)},
+                        {"saturation", std::clamp(postProcess->saturation, 0.0f, 2.0f)},
+                        {"hueShift", std::clamp(postProcess->hueShift, -1.0f, 1.0f)}};
+                }
+
                 if (const auto* body = registry.GetComponent<RigidBodyComponent>(entity))
                 {
                     components["rigidBody"] = {
@@ -490,7 +584,10 @@ namespace qmec::scene
                     {
                         json serializedScript{
                             {"typeId", script.typeId},
-                            {"entityReferences", json::object()}};
+                            {"entityReferences", json::object()},
+                            {"floatFields", json::object()},
+                            {"boolFields", json::object()},
+                            {"intFields", json::object()}};
 
                         const ScriptTypeInfo* type =
                             ScriptTypeRegistry::Instance().Find(script.typeId);
@@ -511,6 +608,23 @@ namespace qmec::scene
                                     targetId != fileIds.end()
                                     ? json(targetId->second)
                                     : json(nullptr);
+                            }
+
+                            for (const ScriptTypeInfo::FloatField& field : type->floatFields)
+                            {
+                                serializedScript["floatFields"][field.id] =
+                                    (std::clamp)(field.get(*script.object), field.minimum, field.maximum);
+                            }
+
+                            for (const ScriptTypeInfo::BoolField& field : type->boolFields)
+                            {
+                                serializedScript["boolFields"][field.id] = field.get(*script.object);
+                            }
+
+                            for (const ScriptTypeInfo::IntField& field : type->intFields)
+                            {
+                                serializedScript["intFields"][field.id] =
+                                    (std::clamp)(field.get(*script.object), field.minimum, field.maximum);
                             }
                         }
                         serializedScripts.push_back(std::move(serializedScript));
@@ -603,6 +717,7 @@ namespace qmec::scene
                     (record.material && !addComponent(*record.material)) ||
                     (record.camera && !addComponent(*record.camera)) ||
                     (record.directionalLight && !addComponent(*record.directionalLight)) ||
+                    (record.postProcess && !addComponent(*record.postProcess)) ||
                     (record.rigidBody && !addComponent(*record.rigidBody)) ||
                     (record.collider && !addComponent(*record.collider)) ||
                     (record.scripts && !addComponent(*record.scripts)))

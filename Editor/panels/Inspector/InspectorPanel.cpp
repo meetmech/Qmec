@@ -25,6 +25,7 @@
 #include <QMimeData>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QSpinBox>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -247,6 +248,8 @@ namespace qmec::editor
         transformLayout->addRow("Position", MakeVec3Row(positionFields_, transformGroup_, -1000000.0, 1000000.0, 0.1));
         transformLayout->addRow("Rotation (degrees)", MakeVec3Row(rotationFields_, transformGroup_, -3600.0, 3600.0, 1.0));
         transformLayout->addRow("Scale", MakeVec3Row(scaleFields_, transformGroup_, -1000.0, 1000.0, 0.1));
+        inheritParentScaleField_ = new QCheckBox("Inherit Parent Scale", transformGroup_);
+        transformLayout->addRow(inheritParentScaleField_);
         contentLayout->addWidget(transformGroup_);
 
         materialGroup_ = new QGroupBox("Material", content);
@@ -285,6 +288,20 @@ namespace qmec::editor
         specularLevelField_ = MakeScalarField(materialGroup_, 0.0, 1.0, 0.05);
         materialLayout->addRow("Specular Level", specularLevelField_);
         contentLayout->addWidget(materialGroup_);
+
+        postProcessGroup_ = new QGroupBox("Post Process", content);
+        auto* postProcessLayout = new QFormLayout(postProcessGroup_);
+        postProcessEnabledField_ = new QCheckBox("Enabled", postProcessGroup_);
+        postProcessLayout->addRow(postProcessEnabledField_);
+        postProcessBrightnessField_ = MakeScalarField(postProcessGroup_, 0.0, 10.0, 0.05);
+        postProcessLayout->addRow("Brightness", postProcessBrightnessField_);
+        postProcessContrastField_ = MakeScalarField(postProcessGroup_, -1.0, 1.0, 0.05);
+        postProcessLayout->addRow("Contrast", postProcessContrastField_);
+        postProcessSaturationField_ = MakeScalarField(postProcessGroup_, 0.0, 2.0, 0.05);
+        postProcessLayout->addRow("Saturation", postProcessSaturationField_);
+        postProcessHueShiftField_ = MakeScalarField(postProcessGroup_, -1.0, 1.0, 0.01);
+        postProcessLayout->addRow("Hue Shift", postProcessHueShiftField_);
+        contentLayout->addWidget(postProcessGroup_);
 
         lightGroup_ = new QGroupBox("Directional Light", content);
         auto* lightLayout = new QFormLayout(lightGroup_);
@@ -401,6 +418,7 @@ namespace qmec::editor
         setWidget(scrollArea);
         transformGroup_->setVisible(false);
         materialGroup_->setVisible(false);
+        postProcessGroup_->setVisible(false);
         lightGroup_->setVisible(false);
         cameraGroup_->setVisible(false);
         colliderGroup_->setVisible(false);
@@ -415,12 +433,23 @@ namespace qmec::editor
 
         for (QDoubleSpinBox* field : scaleFields_)
             connect(field, qOverload<double>(&QDoubleSpinBox::valueChanged), this,[this](double) { CommitTransformEdit(); });
+        connect(inheritParentScaleField_, &QCheckBox::toggled, this,
+            [this](bool) { CommitTransformEdit(); });
 
         for (QDoubleSpinBox* field : albedoColorFields_)
             connect(field, qOverload<double>(&QDoubleSpinBox::valueChanged), this,[this](double) { CommitMaterialEdit(); });
 
         for (QDoubleSpinBox* field : {normalStrengthField_, metallicField_, roughnessField_, specularLevelField_})
             connect(field, qOverload<double>(&QDoubleSpinBox::valueChanged), this,[this](double) { CommitMaterialEdit(); });
+
+        connect(postProcessEnabledField_, &QCheckBox::toggled, this,
+            [this](bool) { CommitPostProcessEdit(); });
+        for (QDoubleSpinBox* field : {postProcessBrightnessField_, postProcessContrastField_,
+            postProcessSaturationField_, postProcessHueShiftField_})
+        {
+            connect(field, qOverload<double>(&QDoubleSpinBox::valueChanged), this,
+                [this](double) { CommitPostProcessEdit(); });
+        }
 
         connect(albedoTextureButton_, &QPushButton::clicked,this, &InspectorPanel::OnChooseAlbedoTexture);
         connect(normalTextureButton_, &QPushButton::clicked, this, &InspectorPanel::OnChooseNormalTexture);
@@ -466,7 +495,8 @@ namespace qmec::editor
         const qmec::scene::components::RigidBodyComponent* rigidbody,
         const qmec::scene::components::ColliderComponent* collider,
         const qmec::scene::components::MaterialComponent* material,
-        const qmec::scripting::ScriptComponent* scripts)
+        const qmec::scripting::ScriptComponent* scripts,
+        const qmec::scene::components::PostProcessComponent* postProcess)
     {
         const bool sameSelectedEntity = selectedEntity_ == entity;
         if (!sameSelectedEntity)
@@ -480,11 +510,13 @@ namespace qmec::editor
         hasCamera_ = entity.IsValid() && camera != nullptr;
         hasCollider_ = entity.IsValid() && collider != nullptr;
         hasMaterial_ = entity.IsValid() && material != nullptr;
+        hasPostProcess_ = entity.IsValid() && postProcess != nullptr;
         if (hasTransform_)displayedTransform_ = *transform;
         if (hasLight_)displayedLight = *light;
         if (hasCamera_)displayedCamera = *camera;
         if (hasCollider_)displayedCollider_ = *collider;
         if (hasMaterial_)displayedMaterial = *material;
+        if (hasPostProcess_)displayedPostProcess_ = *postProcess;
         if (hasRigidBody_)displayedRigidbody = *rigidbody;
 
         selectedScriptTypeIds_.clear();
@@ -507,6 +539,7 @@ namespace qmec::editor
         cameraGroup_->setVisible(hasCamera_);
         colliderGroup_->setVisible(hasCollider_);
         materialGroup_->setVisible(hasMaterial_);
+        postProcessGroup_->setVisible(hasPostProcess_);
         rigidBodyGroup_->setVisible(hasRigidBody_);
         scriptsGroup_->setVisible(!selectedScriptTypeIds_.empty());
         RefreshScriptFields();
@@ -515,6 +548,7 @@ namespace qmec::editor
         RefreshLightFields();
         RefreshCameraFields();
         RefreshMaterialFields();
+        RefreshPostProcessFields();
         RefreshColliderFields();
         RefreshRigidbodyFields();
     }
@@ -706,6 +740,43 @@ namespace qmec::editor
                     });
                 scriptsLayout_->addWidget(fieldRow);
             }
+
+            for (const qmec::scripting::ScriptTypeInfo::BoolField& field : type->boolFields)
+            {
+                auto* fieldRow = new QWidget(scriptsGroup_);
+                auto* fieldLayout = new QHBoxLayout(fieldRow);
+                fieldLayout->setContentsMargins(12, 0, 0, 0);
+                fieldLayout->addWidget(new QLabel(QString::fromStdString(field.displayName), fieldRow));
+                auto* valueField = new QCheckBox(fieldRow);
+                valueField->setChecked(field.get(*instanceIt->object));
+                fieldLayout->addWidget(valueField, 1);
+                connect(valueField, &QCheckBox::toggled, this,
+                    [this, typeId, fieldId = field.id](bool value)
+                    {
+                        emit ScriptBoolFieldEdited(selectedEntity_, QString::fromStdString(typeId),
+                            QString::fromStdString(fieldId), value);
+                    });
+                scriptsLayout_->addWidget(fieldRow);
+            }
+
+            for (const qmec::scripting::ScriptTypeInfo::IntField& field : type->intFields)
+            {
+                auto* fieldRow = new QWidget(scriptsGroup_);
+                auto* fieldLayout = new QHBoxLayout(fieldRow);
+                fieldLayout->setContentsMargins(12, 0, 0, 0);
+                fieldLayout->addWidget(new QLabel(QString::fromStdString(field.displayName), fieldRow));
+                auto* valueField = new QSpinBox(fieldRow);
+                valueField->setRange(field.minimum, field.maximum);
+                valueField->setValue(field.get(*instanceIt->object));
+                fieldLayout->addWidget(valueField, 1);
+                connect(valueField, qOverload<int>(&QSpinBox::valueChanged), this,
+                    [this, typeId, fieldId = field.id](int value)
+                    {
+                        emit ScriptIntFieldEdited(selectedEntity_, QString::fromStdString(typeId),
+                            QString::fromStdString(fieldId), value);
+                    });
+                scriptsLayout_->addWidget(fieldRow);
+            }
         }
     }
 
@@ -730,6 +801,7 @@ namespace qmec::editor
             if (!rotationFields_[axis]->hasFocus()) rotationFields_[axis]->setValue(euler[axis]);
             if (!scaleFields_[axis]->hasFocus()) scaleFields_[axis]->setValue(scale[axis]);
         }
+        inheritParentScaleField_->setChecked(displayedTransform_.inheritParentScale);
         displayedEulerDegrees_ = {
             static_cast<float>(rotationFields_[0]->value()),
             static_cast<float>(rotationFields_[1]->value()),
@@ -762,6 +834,7 @@ namespace qmec::editor
             static_cast<float>(scaleFields_[0]->value()),
             static_cast<float>(scaleFields_[1]->value()),
             static_cast<float>(scaleFields_[2]->value())};
+        displayedTransform_.inheritParentScale = inheritParentScaleField_->isChecked();
 
         emit TransformEdited(selectedEntity_, displayedTransform_);
     }
@@ -819,6 +892,37 @@ namespace qmec::editor
         displayedLight.intensity = static_cast<float>(lightIntensityField_->value());
         displayedLight.enabled = lightEnabledField_->isChecked();
         emit DirectionalLightEdited(selectedEntity_, displayedLight);
+    }
+
+    void InspectorPanel::RefreshPostProcessFields() noexcept
+    {
+        if (!hasPostProcess_)
+            return;
+
+        updatingUi_ = true;
+        postProcessEnabledField_->setChecked(displayedPostProcess_.enabled);
+        if (!postProcessBrightnessField_->hasFocus())
+            postProcessBrightnessField_->setValue(displayedPostProcess_.brightness);
+        if (!postProcessContrastField_->hasFocus())
+            postProcessContrastField_->setValue(displayedPostProcess_.contrast);
+        if (!postProcessSaturationField_->hasFocus())
+            postProcessSaturationField_->setValue(displayedPostProcess_.saturation);
+        if (!postProcessHueShiftField_->hasFocus())
+            postProcessHueShiftField_->setValue(displayedPostProcess_.hueShift);
+        updatingUi_ = false;
+    }
+
+    void InspectorPanel::CommitPostProcessEdit() noexcept
+    {
+        if (updatingUi_ || !hasPostProcess_ || !selectedEntity_.IsValid())
+            return;
+
+        displayedPostProcess_.enabled = postProcessEnabledField_->isChecked();
+        displayedPostProcess_.brightness = static_cast<float>(postProcessBrightnessField_->value());
+        displayedPostProcess_.contrast = static_cast<float>(postProcessContrastField_->value());
+        displayedPostProcess_.saturation = static_cast<float>(postProcessSaturationField_->value());
+        displayedPostProcess_.hueShift = static_cast<float>(postProcessHueShiftField_->value());
+        emit PostProcessEdited(selectedEntity_, displayedPostProcess_);
     }
 
     void InspectorPanel::RefreshRigidbodyFields() noexcept

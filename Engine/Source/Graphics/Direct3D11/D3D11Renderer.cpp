@@ -9,6 +9,7 @@
 #include "QMEC/Scene/Components/MeshRendererComponent.h"
 #include "QMEC/Scene/Components/DirectionalLightComponent.h"
 #include "QMEC/Scene/Components/MaterialComponent.h"
+#include "QMEC/Scene/Components/PostProcessComponent.h"
 #include <Windows.h>
 #include <d3d11.h>
 #include <d3dcompiler.h>
@@ -74,11 +75,15 @@ namespace
 
     struct alignas(16) PostProcessConstants
     {
-        float brightness{10.0f};
+        float enabled{};
+        float brightness{1.0f};
+        float contrast{};
+        float saturation{1.0f};
+        float hueShift{};
         float padding[3]{};
     };
 
-    static_assert(sizeof(PostProcessConstants) == 16U);
+    static_assert(sizeof(PostProcessConstants) == 32U);
 
     struct alignas(16) CameraConstants
     {
@@ -255,12 +260,7 @@ namespace qmec::graphics
 
         ComPtr<ID3DBlob> vertexShaderBytecode{};
         ComPtr<ID3DBlob> shaderErrors{};
-        const HRESULT vertexCompileResult = D3DCompileFromFile(
-            L"Shaders/MaterialTemplate.hlsl",
-            nullptr,
-            D3D_COMPILE_STANDARD_FILE_INCLUDE,
-            "VertexMain",
-            "vs_5_0",
+        const HRESULT vertexCompileResult = D3DCompileFromFile(L"Shaders/MaterialTemplate.hlsl",nullptr,D3D_COMPILE_STANDARD_FILE_INCLUDE,"VertexMain","vs_5_0",
             shaderCompileFlags,
             0U,
             vertexShaderBytecode.GetAddressOf(),
@@ -277,16 +277,7 @@ namespace qmec::graphics
 
         shaderErrors.Reset();
         ComPtr<ID3DBlob> pixelShaderBytecode{};
-        const HRESULT pixelCompileResult = D3DCompileFromFile(
-            L"Shaders/MaterialTemplate.hlsl",
-            nullptr,
-            D3D_COMPILE_STANDARD_FILE_INCLUDE,
-            "PixelMain",
-            "ps_5_0",
-            shaderCompileFlags,
-            0U,
-            pixelShaderBytecode.GetAddressOf(),
-            shaderErrors.GetAddressOf());
+        const HRESULT pixelCompileResult = D3DCompileFromFile(L"Shaders/MaterialTemplate.hlsl",nullptr,D3D_COMPILE_STANDARD_FILE_INCLUDE,"PixelMain","ps_5_0",shaderCompileFlags,0U,pixelShaderBytecode.GetAddressOf(),shaderErrors.GetAddressOf());
 
         if(FAILED(pixelCompileResult))
         {
@@ -458,10 +449,6 @@ namespace qmec::graphics
         ID3D11Buffer* cameraBuffer = implementation_->cameraConstantBuffer.Get();
         implementation_->deviceContext->PSSetConstantBuffers(3U, 1U, &cameraBuffer);
 
-
-        
-
-
         ImageData diffuseImage{};
         if(!LoadImageRgba8( "Assets/Textures/MicrosoftTeams-image (1).png",diffuseImage))
         {
@@ -584,8 +571,7 @@ namespace qmec::graphics
         shadowSamplerDescription.BorderColor[3] = 1.0f;
         shadowSamplerDescription.MaxAnisotropy = 1U;
         shadowSamplerDescription.MaxLOD = D3D11_FLOAT32_MAX;
-        if (FAILED(implementation_->device->CreateSamplerState(
-            &shadowSamplerDescription, implementation_->shadowSampler.GetAddressOf())))
+        if (FAILED(implementation_->device->CreateSamplerState(&shadowSamplerDescription, implementation_->shadowSampler.GetAddressOf())))
         {
             return false;
         }
@@ -613,8 +599,7 @@ namespace qmec::graphics
             return false;
 
         const D3D11_INPUT_ELEMENT_DESC debugElements[]{{"POSITION", 0U, DXGI_FORMAT_R32G32B32_FLOAT, 0U,static_cast<UINT>(offsetof(DebugVertex, position)), D3D11_INPUT_PER_VERTEX_DATA, 0U},
-            {"COLOR", 0U, DXGI_FORMAT_R32G32B32_FLOAT, 0U,
-                static_cast<UINT>(offsetof(DebugVertex, color)), D3D11_INPUT_PER_VERTEX_DATA, 0U}};
+            {"COLOR", 0U, DXGI_FORMAT_R32G32B32_FLOAT, 0U,static_cast<UINT>(offsetof(DebugVertex, color)), D3D11_INPUT_PER_VERTEX_DATA, 0U}};
         if (FAILED(implementation_->device->CreateInputLayout(debugElements, 2U, debugVertexBytecode->GetBufferPointer(), debugVertexBytecode->GetBufferSize(),implementation_->debugInputLayout.GetAddressOf())))
             return false;
 
@@ -623,24 +608,20 @@ namespace qmec::graphics
         debugConstants.Usage = D3D11_USAGE_DYNAMIC;
         debugConstants.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
         debugConstants.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-        if (FAILED(implementation_->device->CreateBuffer(&debugConstants, nullptr,
-            implementation_->debugViewProjectionBuffer.GetAddressOf())))
+        if (FAILED(implementation_->device->CreateBuffer(&debugConstants, nullptr,implementation_->debugViewProjectionBuffer.GetAddressOf())))
             return false;
 
         D3D11_DEPTH_STENCIL_DESC debugDepth{};
         debugDepth.DepthEnable = TRUE;
         debugDepth.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
         debugDepth.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
-        if (FAILED(implementation_->device->CreateDepthStencilState(
-            &debugDepth, implementation_->debugDepthState.GetAddressOf())))
+        if (FAILED(implementation_->device->CreateDepthStencilState(&debugDepth, implementation_->debugDepthState.GetAddressOf())))
             return false;
 
         ComPtr<ID3DBlob> ppVertexBytecode{};
         ComPtr<ID3DBlob> ppPixelBytecode{};
         shaderErrors.Reset();
-        if (FAILED(D3DCompileFromFile(L"Shaders/PostProcess.hlsl", nullptr,
-            D3D_COMPILE_STANDARD_FILE_INCLUDE, "VertexMain", "vs_5_0", shaderCompileFlags, 0U,
-            ppVertexBytecode.GetAddressOf(), shaderErrors.GetAddressOf())))
+        if (FAILED(D3DCompileFromFile(L"Shaders/PostProcess.hlsl", nullptr,D3D_COMPILE_STANDARD_FILE_INCLUDE, "VertexMain", "vs_5_0", shaderCompileFlags, 0U,ppVertexBytecode.GetAddressOf(), shaderErrors.GetAddressOf())))
         {
             if (shaderErrors)
                 OutputDebugStringA(static_cast<const char*>(shaderErrors->GetBufferPointer()));
@@ -648,21 +629,15 @@ namespace qmec::graphics
         }
 
         shaderErrors.Reset();
-        if (FAILED(D3DCompileFromFile(L"Shaders/PostProcess.hlsl", nullptr,
-            D3D_COMPILE_STANDARD_FILE_INCLUDE, "PixelMain", "ps_5_0", shaderCompileFlags, 0U,
-            ppPixelBytecode.GetAddressOf(), shaderErrors.GetAddressOf())))
+        if (FAILED(D3DCompileFromFile(L"Shaders/PostProcess.hlsl", nullptr,D3D_COMPILE_STANDARD_FILE_INCLUDE, "PixelMain", "ps_5_0", shaderCompileFlags, 0U,ppPixelBytecode.GetAddressOf(), shaderErrors.GetAddressOf())))
         {
             if (shaderErrors)
                 OutputDebugStringA(static_cast<const char*>(shaderErrors->GetBufferPointer()));
             return false;
         }
 
-        if (FAILED(implementation_->device->CreateVertexShader(
-                ppVertexBytecode->GetBufferPointer(), ppVertexBytecode->GetBufferSize(), nullptr,
-                implementation_->ppVertexShader.GetAddressOf())) ||
-            FAILED(implementation_->device->CreatePixelShader(
-                ppPixelBytecode->GetBufferPointer(), ppPixelBytecode->GetBufferSize(), nullptr,
-                implementation_->ppPixelShader.GetAddressOf())))
+        if (FAILED(implementation_->device->CreateVertexShader(ppVertexBytecode->GetBufferPointer(), ppVertexBytecode->GetBufferSize(), nullptr,implementation_->ppVertexShader.GetAddressOf())) ||
+            FAILED(implementation_->device->CreatePixelShader(ppPixelBytecode->GetBufferPointer(), ppPixelBytecode->GetBufferSize(), nullptr,implementation_->ppPixelShader.GetAddressOf())))
         {
             return false;
         }
@@ -673,8 +648,7 @@ namespace qmec::graphics
         ppSamplerDescription.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
         ppSamplerDescription.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
         ppSamplerDescription.MaxLOD = D3D11_FLOAT32_MAX;
-        if (FAILED(implementation_->device->CreateSamplerState(
-            &ppSamplerDescription, implementation_->ppSampler.GetAddressOf())))
+        if (FAILED(implementation_->device->CreateSamplerState(&ppSamplerDescription, implementation_->ppSampler.GetAddressOf())))
         {
             return false;
         }
@@ -687,10 +661,7 @@ namespace qmec::graphics
 
         D3D11_SUBRESOURCE_DATA ppConstantBufferData{};
         ppConstantBufferData.pSysMem = &initialPostProcessConstants;
-        if (FAILED(implementation_->device->CreateBuffer(
-            &ppConstantBufferDescription,
-            &ppConstantBufferData,
-            implementation_->ppConstantBuffer.GetAddressOf())))
+        if (FAILED(implementation_->device->CreateBuffer(&ppConstantBufferDescription,&ppConstantBufferData,implementation_->ppConstantBuffer.GetAddressOf())))
         {
             return false;
         }
@@ -699,8 +670,7 @@ namespace qmec::graphics
         ppRasterizerDescription.FillMode = D3D11_FILL_SOLID;
         ppRasterizerDescription.CullMode = D3D11_CULL_NONE;
         ppRasterizerDescription.DepthClipEnable = TRUE;
-        if (FAILED(implementation_->device->CreateRasterizerState(
-            &ppRasterizerDescription, implementation_->ppRasterizerState.GetAddressOf())))
+        if (FAILED(implementation_->device->CreateRasterizerState(&ppRasterizerDescription, implementation_->ppRasterizerState.GetAddressOf())))
         {
             return false;
         }
@@ -794,9 +764,7 @@ namespace qmec::graphics
             return false;
         }
 
-        if (!CreatePostProcessTargets(implementation_->device.Get(), width, height,
-            implementation_->ppSceneTexture, implementation_->ppRenderTargetView,
-            implementation_->ppShaderResourceView))
+        if (!CreatePostProcessTargets(implementation_->device.Get(), width, height,implementation_->ppSceneTexture, implementation_->ppRenderTargetView,implementation_->ppShaderResourceView))
         {
             return false;
         }
@@ -832,8 +800,7 @@ namespace qmec::graphics
         return SUCCEEDED(implementation_->swapChain->Present(1U, 0U));
     }
 
-    bool D3D11Renderer::RenderFrame(float red, float green,float blue,float alpha, const Scene& scene,const AssetSystem& assets,const Camera& camera,
-        std::span<const DebugLine> debugLines) noexcept
+    bool D3D11Renderer::RenderFrame(float red, float green,float blue,float alpha, const Scene& scene,const AssetSystem& assets,const Camera& camera,std::span<const DebugLine> debugLines) noexcept
     {
         const Registry& registry = scene.GetRegistry();
         const Mat4& view = camera.ViewMatrix();
@@ -1217,6 +1184,22 @@ namespace qmec::graphics
         implementation_->deviceContext->PSSetShaderResources(0U, 1U, &sceneTextureView);
         ID3D11SamplerState* sceneSampler = implementation_->ppSampler.Get();
         implementation_->deviceContext->PSSetSamplers(0U, 1U, &sceneSampler);
+
+        PostProcessConstants postProcessConstants{};
+        for (const Entity entity : registry.GetEntitiesWith<PostProcessComponent>())
+        {
+            const auto* settings = registry.GetComponent<PostProcessComponent>(entity);
+            if (settings == nullptr)
+                continue;
+
+            postProcessConstants.enabled = settings->enabled ? 1.0f : 0.0f;
+            postProcessConstants.brightness = std::clamp(settings->brightness, 0.0f, 10.0f);
+            postProcessConstants.contrast = std::clamp(settings->contrast, -1.0f, 1.0f);
+            postProcessConstants.saturation = std::clamp(settings->saturation, 0.0f, 2.0f);
+            postProcessConstants.hueShift = std::clamp(settings->hueShift, -1.0f, 1.0f);
+            break;
+        }
+        implementation_->deviceContext->UpdateSubresource(implementation_->ppConstantBuffer.Get(), 0U, nullptr,&postProcessConstants, 0U, 0U);
         ID3D11Buffer* ppConstantBuffer = implementation_->ppConstantBuffer.Get();
         implementation_->deviceContext->PSSetConstantBuffers(2U, 1U, &ppConstantBuffer);
         implementation_->deviceContext->Draw(3U, 0U);

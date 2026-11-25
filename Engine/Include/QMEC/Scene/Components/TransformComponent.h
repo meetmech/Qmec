@@ -11,6 +11,7 @@ namespace qmec::scene::components
         Vec3 position{};
         Quat rotation{};
         Vec3 scale{1.0f, 1.0f, 1.0f};
+        bool inheritParentScale{true};
         Entity parent{};
 
         void SetParent(Entity parentEntity) noexcept
@@ -32,6 +33,7 @@ namespace qmec::scene::components
         {
             return parent;
         }
+
     };
 }
 

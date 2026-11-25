@@ -21,6 +21,7 @@ namespace qmec::physics
 		Entity entity{};
 		const ColliderComponent* collider{ nullptr };
 		TransformComponent* transform{ nullptr };
+		TransformComponent* bodyTransform{ nullptr };
 		RigidBodyComponent* rigidbody{ nullptr };
 	};
 

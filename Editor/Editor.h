@@ -43,6 +43,7 @@ namespace qmec::scene::components
     struct CameraComponent;
     struct DirectionalLightComponent;
     struct MaterialComponent;
+    struct PostProcessComponent;
     struct RigidBodyComponent;
     struct TransformComponent;
 }
@@ -71,10 +72,10 @@ namespace qmec::editor
         void OnComponentRemoveRequested(qmec::ecs::Entity entity, InspectorComponentType componentType);
         void OnScriptAddRequested(qmec::ecs::Entity entity, const QString& typeId);
         void OnScriptRemoveRequested(qmec::ecs::Entity entity, const QString& typeId);
-        void OnScriptEntityReferenceEdited(qmec::ecs::Entity owner, const QString& typeId,
-            const QString& fieldId, qmec::ecs::Entity referencedEntity);
-        void OnScriptFloatFieldEdited(qmec::ecs::Entity owner, const QString& typeId,
-            const QString& fieldId, float value);
+        void OnScriptEntityReferenceEdited(qmec::ecs::Entity owner, const QString& typeId,const QString& fieldId, qmec::ecs::Entity referencedEntity);
+        void OnScriptFloatFieldEdited(qmec::ecs::Entity owner, const QString& typeId,const QString& fieldId, float value);
+        void OnScriptBoolFieldEdited(qmec::ecs::Entity owner, const QString& typeId,const QString& fieldId, bool value);
+        void OnScriptIntFieldEdited(qmec::ecs::Entity owner, const QString& typeId,const QString& fieldId, int value);
         void OnTransformEdited(qmec::ecs::Entity entity,
         const qmec::scene::components::TransformComponent& transform);
         void OnDirectionalLightEdited(qmec::ecs::Entity entity,const qmec::scene::components::DirectionalLightComponent& light);
@@ -82,6 +83,7 @@ namespace qmec::editor
         void OnRigidBodyEdited(qmec::ecs::Entity entity, const qmec::scene::components::RigidBodyComponent& rigidbody);
         void OnColliderEdited(qmec::ecs::Entity entity,const qmec::scene::components::ColliderComponent& collider);
         void OnMaterialEdited(qmec::ecs::Entity entity, const qmec::scene::components::MaterialComponent& material);
+        void OnPostProcessEdited(qmec::ecs::Entity entity,const qmec::scene::components::PostProcessComponent& postProcess);
         void Tick();
 
         qmec::graphics::D3D11Renderer renderer_{};

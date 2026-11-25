@@ -102,8 +102,7 @@ float GetShadowVisibility(float4 lightPosition, float diffuseAmount)
 
 float4 PixelMain(VertexOutput input) : SV_TARGET
 {
-    float4 textureColor = hasAlbedoTexture != 0U? albedoTexture.Sample(materialSampler, input.uv)
-        : diffuseTexture.Sample(diffuseSampler, input.uv);
+    float4 textureColor = hasAlbedoTexture != 0U? albedoTexture.Sample(materialSampler, input.uv) : diffuseTexture.Sample(diffuseSampler, input.uv);
     float4 surfaceColor = float4(albedoColor.rgb * textureColor.rgb * input.vertexColor,albedoColor.a * textureColor.a);
     
     
